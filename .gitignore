@@ -1,0 +1,5 @@
+.env
+__pycache__
+stock_env
+stock-frontend/node_modules
+stock_data.db
