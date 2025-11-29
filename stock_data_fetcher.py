@@ -40,7 +40,6 @@ class StockDataFetcher:
             # 如果数据库中已经有数据且覆盖了请求范围，直接返回
             if latest_db_date and latest_db_date >= end_date:
                 db_data = db.get_daily_data(stock_code, start_date, end_date)
-                print(f"✅ 从数据库读取 {stock_code} 数据: {len(db_data)} 条")
                 return db_data
             else:
                 # 否则从API获取数据并更新数据库
@@ -66,7 +65,7 @@ class StockDataFetcher:
             print(f"❌ 获取daily数据失败: {e}")
             return pd.DataFrame()
             
-    def get_min_kline(self, stock_code, period='5', start_date=None, end_date=None, adjust=''):
+    def get_min_kline(self, stock_code, period='5', start_date=None, end_date=None, realtime=False, adjust=''):
         """
         获取股票分钟K线数据 - 支持缓存
         
@@ -85,22 +84,23 @@ class StockDataFetcher:
             end_date = datetime.now().strftime("%Y-%m-%d")
         
         if start_date is None:
-            start_date = datetime.now().strftime("%Y-%m-%d")
+            start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
         
         # 修正结束日期为交易日
         tools = StockTools()
         # 提取纯日期部分（去掉时间）
         end_date_only = end_date.split(' ')[0] if ' ' in end_date else end_date
         start_date_only = start_date.split(' ')[0] if ' ' in start_date else start_date
-        
+
         # 修正结束日期为交易日
         corrected_end_date = tools.get_previous_trading_day(end_date_only) or end_date_only
         
         # 转换为完整的时间范围（9:30-15:00）
         start_datetime = f"{start_date_only} 09:30:00"
-        end_datetime = f"{corrected_end_date} 15:00:00"
-        
-        print(f"📊 请求分钟数据范围: {start_datetime} 到 {end_datetime}")
+        if not realtime:
+            end_datetime = f"{corrected_end_date} 15:00:00"
+        else:
+            end_datetime = end_date
         
         try:
             from stock_db import StockDB
@@ -112,7 +112,6 @@ class StockDataFetcher:
             # 如果数据库中有数据且覆盖了请求范围，直接返回
             if latest_min_datetime and latest_min_datetime >= end_datetime:
                 db_data = db.get_min_data(stock_code, period, start_datetime, end_datetime)
-                print(f"✅ 从数据库读取{period}分钟数据: {stock_code} - {len(db_data)} 条")
                 return db_data
             else:
                 # 数据库数据不够新，从API获取最新数据
@@ -136,88 +135,97 @@ class StockDataFetcher:
         except Exception as e:
             print(f"❌ 获取{period}分钟K线数据失败: {e}")
             return pd.DataFrame()
-     
-# 使用示例
-if __name__ == "__main__":
-    # 创建数据获取器实例
-    fetcher = StockDataFetcher()
-    
-    # 获取最近100天的数据
-    print("=== 获取最近180天数据 ===")
-    end_date = datetime.now().strftime("%Y-%m-%d")
-    start_date = (datetime.now() - timedelta(days=50)).strftime("%Y-%m-%d")
-    
-    daily_data = fetcher.get_daily_kline("000063", start_date, end_date)
 
-    min5_data = fetcher.get_min_kline("000063", '5', "2025-01-01 09:30:00", "2025-11-28 15:00:00")
+    def get_price(self, stock_code: str, period: str, current_datetime: datetime) -> float:
+        try:
+            from stock_db import StockDB
+            from datetime import datetime
+            
+            db = StockDB()
 
-    min15_data = fetcher.get_min_kline("000063", '15', "2025-01-01 09:30:00", "2025-11-28 15:00:00")
-    
+            current_datetime += timedelta(minutes=15)
+            
+            # 统一转换为datetime对象
+            if isinstance(current_datetime, str):
+                current_dt = datetime.strptime(current_datetime, '%Y-%m-%d %H:%M:%S')
+            else:
+                current_dt = current_datetime
+            
+            # 获取数据库中最新的分钟数据时间
+            latest_min_datetime = db.get_latest_min_datetime(stock_code, period)
+            
+            if latest_min_datetime is None:
+                print(f"{stock_code} 没有数据")
+                return None
+            
+             # 如果latest_min_datetime是字符串，也转换为datetime
+            if isinstance(latest_min_datetime, str):
+                latest_dt = datetime.strptime(latest_min_datetime, '%Y-%m-%d %H:%M:%S')
+            else:
+                latest_dt = latest_min_datetime
+            
+            # 现在用datetime对象比较
+            if latest_dt < current_dt:
+                print(f"{stock_code} 的最新5分钟数据已经更新，请勿重复获取")
+                return None
+            
+            # 获取数据时使用字符串格式
+            current_datetime_str = current_dt.strftime('%Y-%m-%d %H:%M:%S')
+            db_data = db.get_min_data(stock_code, period, current_datetime_str, current_datetime_str)
 
+            if db_data.empty:
+                print(f"没有数据")
+                return None
+            
+            return float(db_data['open'].iloc[0])
+        
+        except Exception as e:
+            print(f"❌ 获取价格失败: {e}")
+            return False
+
+    def is_trade_success(self, stock_code: str, period: str, price: float, quantity: int, action: str, current_datetime: str) -> bool:
+        """判断交易是否成功"""
+        try:
+            from stock_db import StockDB
+            from datetime import datetime
+            
+            db = StockDB()
+            
+            # 统一转换为datetime对象
+            if isinstance(current_datetime, str):
+                current_dt = datetime.strptime(current_datetime, '%Y-%m-%d %H:%M:%S')
+            else:
+                current_dt = current_datetime
+            
+            # 获取数据库中最新的分钟数据时间
+            latest_min_datetime = db.get_latest_min_datetime(stock_code, period)
+            
+            if latest_min_datetime is None:
+                return False
+                
+            # 如果latest_min_datetime是字符串，也转换为datetime
+            if isinstance(latest_min_datetime, str):
+                latest_dt = datetime.strptime(latest_min_datetime, '%Y-%m-%d %H:%M:%S')
+            else:
+                latest_dt = latest_min_datetime
+            
+            # 现在用datetime对象比较
+            if latest_dt < current_dt:
+                return False
+            
+            # 获取数据时使用字符串格式
+            current_datetime_str = current_dt.strftime('%Y-%m-%d %H:%M:%S')
+            db_data = db.get_min_data(stock_code, period, current_datetime_str, current_datetime_str)
+
+            if db_data.empty:
+                return False
+
+            low = float(db_data['low'].iloc[0])
+            high = float(db_data['high'].iloc[0])
+
+            return low <= price <= high
+            
+        except Exception as e:
+            print(f"❌ 获取判断交易成功与否失败: {e}")
+            return False
     
-#    if not data.empty:
-#        print(f"数据时间范围: {data['date'].min()} 到 {data['date'].max()}")
-#        
-#        # 画K线图
-#        plt.figure(figsize=(12, 8))
-#        
-#        # 绘制K线图
-#        plt.subplot(2, 1, 1)
-#        
-#        # 遍历每个交易日画K线
-#        for i in range(len(data)):
-#            date = data['date'].iloc[i]
-#            open_price = data['open'].iloc[i]
-#            close_price = data['close'].iloc[i]
-#            high = data['high'].iloc[i]
-#            low = data['low'].iloc[i]
-#            
-#            # 判断涨跌颜色
-#            if close_price >= open_price:
-#                color = 'red'  # 上涨为红色
-#                body_bottom = open_price
-#                body_height = close_price - open_price
-#            else:
-#                color = 'green'  # 下跌为绿色
-#                body_bottom = close_price
-#                body_height = open_price - close_price
-#            
-#            # 画影线（上下影线）
-#            plt.plot([i, i], [low, high], color='black', linewidth=1)
-#            
-#            # 画实体
-#            if body_height > 0:
-#                plt.bar(i, body_height, bottom=body_bottom, width=0.6, 
-#                       color=color, edgecolor='black')
-#        
-#        plt.title('K线图 - 002396')
-#        plt.ylabel('价格 (元)')
-#        plt.grid(True, alpha=0.3)
-#        
-#        # 设置X轴刻度（只显示有数据的交易日）
-#        plt.xticks(range(len(data)), 
-#                  [date.strftime('%m-%d') for date in data['date']], 
-#                  rotation=45)
-#        
-#        # 绘制成交量
-#        plt.subplot(2, 1, 2)
-#        
-#        # 成交量颜色根据涨跌
-#        colors = ['red' if close >= open else 'green' 
-#                 for close, open in zip(data['close'], data['open'])]
-#        
-#        plt.bar(range(len(data)), data['volume'], color=colors, alpha=0.7)
-#        plt.xlabel('交易日')
-#        plt.ylabel('成交量')
-#        plt.grid(True, alpha=0.3)
-#        
-#        # 设置X轴刻度（与K线图对齐）
-#        plt.xticks(range(len(data)), 
-#                  [date.strftime('%m-%d') for date in data['date']], 
-#                  rotation=45)
-#        
-#        plt.tight_layout()
-#        plt.show()
-#        
-#    else:
-#        print("未获取到数据")

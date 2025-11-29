@@ -124,7 +124,6 @@ class StockDB:
             df = pd.read_sql_query(query, conn, params=[stock_code, start_date, end_date])
             conn.close()
             
-            print(f"从数据库中获取{stock_code}的日K线数据成功")
             if not df.empty:
                 df['date'] = pd.to_datetime(df['date'])
             return df
@@ -154,7 +153,6 @@ class StockDB:
             
             if not df.empty:
                 df['datetime'] = pd.to_datetime(df['datetime'])
-                print(f"✅ 获取{period}分钟数据: {stock_code} - {len(df)} 条")
             
             return df
             

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class DeepSeekAPI:
     def __init__(self):
         self._api_key = os.environ.get("DEEPSEEK_API_KEY")
+        self.token_cost = 0
     
     def ask_question(self, prompt, model="deepseek-chat", timeout=60):
         """
@@ -54,6 +55,8 @@ class DeepSeekAPI:
             
             if response.status_code == 200:
                 result = response.json()
+                self.token_cost = result["usage"]["total_tokens"]
+                print(f"消耗token数: {result['usage']['total_tokens']}")
                 content = result["choices"][0]["message"]["content"]
                 logger.info("DeepSeek API request successful")
                 return content

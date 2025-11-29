@@ -45,3 +45,4 @@ class StockTools:
         except Exception as e:
             print(f"判断交易日失败: {e}")
             return False
+    
