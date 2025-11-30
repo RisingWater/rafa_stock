@@ -211,4 +211,4 @@ class StockSimulation:
             
             # 显示每日总结
             self._log_message(f"\n=== {cur_date.strftime('%Y-%m-%d')} 交易日结束 ===")
-            self._log_message(self.account.display_portfolio())
+            self._log_message(self.account.display_portfolio(current_prices))
