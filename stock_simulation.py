@@ -9,7 +9,7 @@ import uuid
 import json
 
 class StockSimulation:
-    def __init__(self, stock_code, stock_name, start_date, end_date, strategy, initial_cash=1000000):
+    def __init__(self, stock_code, stock_name, start_date, end_date, strategy, initial_cash=100000):
         self.simluation_name = f"{stock_name}({stock_code})-{start_date.strftime('%Y-%m%d')}-{end_date.strftime('%m%d')}-{strategy.name()}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
         self.stock_code = stock_code
@@ -171,6 +171,10 @@ class StockSimulation:
                 
                 current_price = fetcher.get_price(self.stock_code, '15', cur_datetime)
                 self._log_message(f"\n=== 决策时间: {cur_datetime} 当前价格: {current_price} ===")
+
+                if current_price is None:
+                    self._log_message(f"无法获取当前价格，跳过此决策")
+                    continue
                 
                 current_prices = {self.stock_code : current_price}
                 self._log_message(f"\n=== 仓位情况: {self.account.get_portfolio_summary(current_prices)}")

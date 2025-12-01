@@ -212,7 +212,7 @@ class StockDataFetcher:
             db_data = db.get_min_data(stock_code, period, current_datetime_str, current_datetime_str)
 
             if db_data.empty:
-                print(f"没有数据")
+                print(f"{current_datetime_str}没有数据")
                 return None
             
             return float(db_data['open'].iloc[0])

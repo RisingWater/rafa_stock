@@ -4,3 +4,4 @@ stock_env
 stock-frontend/node_modules
 stock_data.db
 log
+log_*

@@ -150,7 +150,7 @@ class TPlusOneStockAccount:
         """
         total_cost = price * quantity
         # 买入手续费
-        buy_fee = self.transaction_fee
+        buy_fee = self.transaction_fee * 2
         # 预扣卖出手续费（在买入时就算入成本）
         sell_fee = self.transaction_fee + total_cost * self.stamp_duty_rate
         return total_cost + buy_fee + sell_fee
