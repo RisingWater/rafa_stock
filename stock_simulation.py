@@ -9,7 +9,7 @@ import uuid
 import json
 
 class StockSimulation:
-    def __init__(self, stock_code, stock_name, start_date, end_date, strategy):
+    def __init__(self, stock_code, stock_name, start_date, end_date, strategy, initial_cash=1000000):
         self.simluation_name = f"{stock_name}({stock_code})-{start_date.strftime('%Y-%m%d')}-{end_date.strftime('%m%d')}-{strategy.name()}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
         self.stock_code = stock_code
@@ -31,6 +31,7 @@ class StockSimulation:
         self._setup_logging()
         self._setup_decision_file()
         self._data_preparation()
+        self._initial_cash = initial_cash
 
     def set_initial_state(self, initial_cash: float):
         self.account = TPlusOneStockAccount(initial_cash)
@@ -132,7 +133,7 @@ class StockSimulation:
             return
 
         if not self.account:
-            self.account = TPlusOneStockAccount(initial_cash=100000)
+            self.account = TPlusOneStockAccount(self._initial_cash)
 
         fetcher = StockDataFetcher()
 
@@ -189,8 +190,10 @@ class StockSimulation:
                                 self._log_decision(decision, cur_datetime)
                                 self._log_message(f"成功买入 {decision.stock_code} {decision.quantity}股 @ {decision.price}")
                                 self._log_message(f"操作说明: {decision.reason}")
-                                self._log_message(f"止损点: {decision.stop_loss:.2f}")
-                                self._log_message(f"止盈点: {decision.take_profit:.2f}")
+                                if decision.stop_loss:
+                                    self._log_message(f"止损点: {decision.stop_loss:.2f}")
+                                if decision.take_profit:
+                                    self._log_message(f"止盈点: {decision.take_profit:.2f}")
                     elif decision.action == "sell":
                         if fetcher.is_trade_success(decision.stock_code, '15', decision.price, decision.quantity, 'buy', cur_datetime + timedelta(minutes=15)):
                             success = self.account.sell(decision.stock_code, decision.price, decision.quantity, decision)
@@ -205,10 +208,40 @@ class StockSimulation:
                     self._log_message(f"决策解析失败: {e}")
                     continue
 
+            end_price = self._fetcher.get_daily_end_price(self.stock_code, cur_date)
+            end_prices = {self.stock_code : end_price}
+
             # 进入下一个交易日
             cur_date += timedelta(days=1)
             self.account.next_trading_day()
             
             # 显示每日总结
+            
             self._log_message(f"\n=== {cur_date.strftime('%Y-%m-%d')} 交易日结束 ===")
-            self._log_message(self.account.display_portfolio(current_prices))
+            self._log_message(self.account.display_portfolio(end_prices))
+
+        start_price = self._fetcher.get_daily_start_price(self.stock_code, self.start_date)
+        end_price = self._fetcher.get_daily_end_price(self.stock_code, self.end_date)
+
+        change_rate = (end_price - start_price) / start_price
+        origin_value = self._initial_cash * (1 + change_rate)
+
+        new_value = self.account.get_total_value(end_prices)
+        new_change_rate = (new_value - self._initial_cash) / self._initial_cash
+
+        self._log_message(f"\n=== 模拟交易结束 ===")
+        self._log_message(f"股票：{self.stock_name}({self.stock_code})")
+        self._log_message(f"初始资金：{self._initial_cash}")
+        self._log_message(f"模拟期间：{self.start_date.strftime('%Y-%m-%d')} 至 {self.end_date.strftime('%Y-%m-%d')}")
+        self._log_message(f"初始股票价格：{start_price:.2f} 元， 结束股票价格：{end_price:.2f} 元，涨跌幅：{change_rate*100:.2f}%")
+        self._log_message(f"理论总资产（不交易情况下）：{origin_value:.2f} 元, 利润率：{change_rate*100:.2f}%")
+        self._log_message(f"实际总资产（交易后）：{new_value:.2f} 元, 利润率：{new_change_rate*100:.2f}%")
+        performance_diff = (new_change_rate - change_rate) * 100  # 转换为百分比
+
+        if performance_diff > 0:
+            self._log_message(f"跑赢了{performance_diff:.2f}%")
+        else:
+            self._log_message(f"跑输了{abs(performance_diff):.2f}%")
+        
+        self._log_message(f"模拟交易决策已保存到: \n    {self.decision_file}")
+        self._log_message(f"模拟交易日志已保存到: \n    {self.log_file}")

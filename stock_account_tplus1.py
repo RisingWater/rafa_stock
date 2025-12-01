@@ -302,16 +302,29 @@ class TPlusOneStockAccount:
         _, _, cost_price = self.holdings[code]
         return cost_price
     
-    def display_portfolio(self, current_prices=None):
+    def get_total_value(self, current_prices):
+        """获取投资组合的总价值"""
+        total_value = 0
+        for code, (total_quantity, available_quantity, cost_price) in self.holdings.items():
+            cost_value = total_quantity * cost_price
+            current_price = current_prices.get(code, cost_price) if current_prices else cost_prices
+            current_value = total_quantity * current_price
+            total_value += current_value
+
+        total_value += self.cash
+        return total_value
+
+    def display_portfolio(self, current_prices):
         """显示投资组合信息"""
-        print("\n" + "="*70)
-        print("T+1 投资组合概览")
-        print("="*70)
-        print(f"现金: {self.cash:.2f}元")
+        msg = ""
+        msg += ("\n" + "="*70 + "\n")
+        msg += ("T+1 投资组合概览\n")
+        msg += ("="*70 + "\n")
+        msg += (f"现金: {self.cash:.2f}元\n")
         
         if self.holdings:
-            print("\n持股详情:")
-            print("-"*50)
+            msg += ("\n持股详情:\n")
+            msg += ("-"*50 + "\n")
             total_stock_value = 0
             
             for code, (total_quantity, available_quantity, cost_price) in self.holdings.items():
@@ -324,25 +337,22 @@ class TPlusOneStockAccount:
                 total_stock_value += current_value
                 
                 status = "可售" if available_quantity > 0 else "持仓"
-                print(f"{code}: {total_quantity}股 ({status}: {available_quantity}股)")
-                print(f"     成本价: {cost_price:.4f}元 | 保本价: {cost_price:.4f}元")
-                print(f"     当前价: {current_price:.2f}元 | 当前市值: {current_value:.2f}元")
-                print(f"     盈亏: {profit_loss:.2f}元 ({profit_loss_rate:+.2f}%)")
+                msg += (f"{code}: {total_quantity}股 ({status}: {available_quantity}股)\n")
+                msg += (f"     成本价: {cost_price:.4f}元 | 保本价: {cost_price:.4f}元\n")
+                msg += (f"     当前价: {current_price:.2f}元 | 当前市值: {current_value:.2f}元\n")
+                msg += (f"     盈亏: {profit_loss:.2f}元 ({profit_loss_rate:+.2f}%)\n")
                 
-                # 显示建议卖出价
-                if available_quantity > 0:
-                    break_even = self.get_break_even_price(code)
-                    if current_price < break_even:
-                        print(f"     💡 建议卖出价: ≥{break_even:.4f}元")
-                print("-"*25)
+                msg += ("-"*25 + "\n")
             
-            print(f"\n股票总市值: {total_stock_value:.2f}元")
+            msg += (f"\n股票总市值: {total_stock_value:.2f}元\n")
         else:
-            print("\n当前未持有任何股票")
+            msg += ("\n当前未持有任何股票\n")
             total_stock_value = 0
         
-        print(f"总资产: {self.total_assets:.2f}元")
-        print("="*70)
+        msg += (f"总资产: {self.total_assets:.2f}元\n")
+        msg += ("="*70 + "\n")
+
+        return msg
 
     def availiable_quantity(self, stock_code):
         holding = self.holdings.get(stock_code)
@@ -351,7 +361,7 @@ class TPlusOneStockAccount:
         else:
             return 0
 
-    def get_portfolio_summary(self, current_prices=None):
+    def get_portfolio_summary(self, current_prices):
         """获取投资组合的紧凑字符串摘要，用于生成提示词"""
         lines = []
         lines.append(f"现金: {self.cash:.2f}元")
@@ -386,40 +396,3 @@ class TPlusOneStockAccount:
         
         return "\n".join(lines)
 
-
-# 使用示例
-if __name__ == "__main__":
-    # 创建T+1账户
-    account = TPlusOneStockAccount(initial_cash=100000)
-    
-    # 显示初始状态
-    account.display_portfolio()
-    
-    # 买入股票
-    print("\n=== 买入操作 ===")
-    account.buy("000001", 10.5, 1000)  # 买入1000股平安银行
-    account.buy("600036", 35.2, 500)   # 买入500股招商银行
-    
-    # 尝试卖出（应该失败，因为T+1）
-    print("\n=== 尝试当日卖出 ===")
-    account.sell("000001", 11.0, 500)
-    
-    # 进入下一个交易日
-    print("\n=== 进入下一个交易日 ===")
-    account.next_trading_day()
-    
-    # 卖出部分股票
-    print("\n=== 卖出操作 ===")
-    account.sell("000001", 11.0, 500)
-    
-    # 显示当前组合
-    current_prices = {"000001": 10.8, "600036": 36.5}
-    account.display_portfolio(current_prices=current_prices)
-    
-    # 做反T：先卖出再买入
-    print("\n=== 反T操作 ===")
-    account.sell("600036", 36.0, 300)  # 先卖出300股
-    account.buy("600036", 35.5, 300)   # 再买入300股
-    
-    # 显示最终状态
-    account.display_portfolio(current_prices=current_prices)

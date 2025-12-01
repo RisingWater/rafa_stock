@@ -136,6 +136,44 @@ class StockDataFetcher:
             print(f"❌ 获取{period}分钟K线数据失败: {e}")
             return pd.DataFrame()
 
+    def get_daily_end_price(self, stock_code: str, current_datetime: datetime) -> float:
+        try:
+            from stock_db import StockDB
+            from datetime import datetime
+            
+            db = StockDB()
+
+            db_data = db.get_daily_data(stock_code, current_datetime.strftime("%Y-%m-%d"), current_datetime.strftime("%Y-%m-%d"))
+
+            if db_data.empty:
+                print(f"没有数据")
+                return None
+            
+            return float(db_data['close'].iloc[0])
+        
+        except Exception as e:
+            print(f"❌ 获取价格失败: {e}")
+            return None
+
+    def get_daily_start_price(self, stock_code: str, current_datetime: datetime) -> float:
+        try:
+            from stock_db import StockDB
+            from datetime import datetime
+            
+            db = StockDB()
+
+            db_data = db.get_daily_data(stock_code, current_datetime.strftime("%Y-%m-%d"), current_datetime.strftime("%Y-%m-%d"))
+
+            if db_data.empty:
+                print(f"没有数据")
+                return None
+            
+            return float(db_data['open'].iloc[0])
+        
+        except Exception as e:
+            print(f"❌ 获取价格失败: {e}")
+            return False
+            
     def get_price(self, stock_code: str, period: str, current_datetime: datetime) -> float:
         try:
             from stock_db import StockDB
@@ -158,7 +196,7 @@ class StockDataFetcher:
                 print(f"{stock_code} 没有数据")
                 return None
             
-             # 如果latest_min_datetime是字符串，也转换为datetime
+            # 如果latest_min_datetime是字符串，也转换为datetime
             if isinstance(latest_min_datetime, str):
                 latest_dt = datetime.strptime(latest_min_datetime, '%Y-%m-%d %H:%M:%S')
             else:

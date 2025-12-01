@@ -15,7 +15,6 @@ class StockStrategyGridV1:
         self._base_line = None
 
         self._grid_size = [
-            0.015,
             0.02,
             0.03,
             0.05,
@@ -37,6 +36,9 @@ class StockStrategyGridV1:
         else:
             return False
 
+    def _get_fee_price(self, price):
+        return (self._base_line.volume * price * 0.0005 + 10) / self._base_line.volume
+
     def _create_buy_decision(self, stock_code, cur_datetime, price, msg) -> TradeDecision:
         try:
             if self._grid_size_buy_index < len(self._grid_size) - 1:
@@ -45,7 +47,7 @@ class StockStrategyGridV1:
                 self._grid_size_sell_index -= 1
 
             msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}"
-            self._base_line.price = price
+            self._base_line.price = price + self._get_fee_price(price)
             return TradeDecision(cur_datetime, "buy", stock_code, price, self._base_line.volume, msg)
         except Exception as e:
             print(f"创建买入决策失败:{e}")
@@ -53,7 +55,7 @@ class StockStrategyGridV1:
     def _create_sell_decision(self, stock_code, cur_datetime, price, msg) -> TradeDecision:
         try:
             if self._grid_size_sell_index < len(self._grid_size) - 1:
-                self._grid_size_shell_index += 1
+                self._grid_size_sell_index += 1
             if self._grid_size_buy_index > 0:
                 self._grid_size_buy_index -= 1
 

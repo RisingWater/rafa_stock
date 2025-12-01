@@ -1,5 +1,5 @@
-numpy==1.24.3
-pandas==2.0.3
+numpy==1.26.2
+pandas
 akshare
 chinese-calendar
 python-dotenv
@@ -7,3 +7,4 @@ fastapi
 uvicorn
 jinja2
 python-multipart
+matplotlib
