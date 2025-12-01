@@ -67,8 +67,7 @@ if __name__ == '__main__':
                     win_count += 1
                 total_performance += performance_diff
 
-            f.write(f"合计             \t理论利润  ：{total_old:8.2f}% \t实际利润  ：{total_new:8.2f}%\n")
-            f.write(f"                 \t差额 {(total_new - total_old):8.2f}% \t百分比  ：{((total_new - total_old)/total_new):8.2f}%\n")
+            f.write(f"合计\t理论利润：{total_old:8.2f} \t实际利润：{total_new:8.2f}\tt差额 {(total_new - total_old):8.2f}\n")
 
             if total_performance > 0:
                 f.write(f"平均跑赢: {total_performance / len(stocks):.2f}%\n")
