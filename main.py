@@ -3,6 +3,7 @@ from stock_simulation import StockSimulation
 from datetime import datetime
 from stock_strategy_deepseek import DeepSeekStrategy
 from stock_strategy_gird_v1 import StockStrategyGridV1
+from stock_strategy_gird_v2 import StockStrategyGridV2
 
 if __name__ == '__main__':
     stocks = [
@@ -30,5 +31,5 @@ if __name__ == '__main__':
     for stock in stocks:
         stock_code = stock['stock_code']
         stock_name = stock['stock_name']
-        simulation = StockSimulation(stock_code, stock_name, start_date, end_date, StockStrategyGridV1())
+        simulation = StockSimulation(stock_code, stock_name, start_date, end_date, StockStrategyGridV2())
         simulation.run()

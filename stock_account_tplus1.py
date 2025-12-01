@@ -199,9 +199,6 @@ class TPlusOneStockAccount:
             self.holdings[code] = [quantity, 0, actual_cost_per_share]
         
         actual_cost = total_expense / quantity
-        print(f"成功买入 {quantity}股{code}，价格{price:.2f}元")
-        print(f"实际成本: {actual_cost:.4f}元/股（已含买卖手续费）")
-        print(f"总支出: {total_expense:.2f}元")
         
         self._update_total_assets()
         self._add_trade_record(decision)
@@ -248,38 +245,28 @@ class TPlusOneStockAccount:
         total_cost = cost_price * quantity
         profit_loss = income - total_cost
         profit_loss_rate = (profit_loss / total_cost) * 100 if total_cost > 0 else 0
-        
-        print(f"成功卖出 {quantity}股{code}，价格{price:.2f}元")
-        print(f"收入: {income:.2f}元，成本: {total_cost:.2f}元")
-        print(f"盈亏: {profit_loss:.2f}元 ({profit_loss_rate:+.2f}%)")
-        
+                
         self._update_total_assets()
         self._add_trade_record(decision)
         return True
     
     def next_trading_day(self):
         """进入下一个交易日"""
-        print("进入下一个交易日...")
         stocks_to_remove = []
         
         for code, (total_quantity, available_quantity, cost_price) in self.holdings.items():
             if total_quantity == 0:
                 # 标记零持股的股票
                 stocks_to_remove.append(code)
-                print(f"清除零持股: {code}")
             else:
                 # 将所有不可售股票转为可售
                 self.holdings[code] = [total_quantity, total_quantity, cost_price]
                 newly_available = total_quantity - available_quantity
-                if newly_available > 0:
-                    print(f"{code}: {newly_available}股变为可售")
         
         # 清除零持股记录
         for code in stocks_to_remove:
             del self.holdings[code]
-        
-        print("交易日切换完成")
-    
+            
     def _update_total_assets(self):
         """更新总资产"""
         total_stock_value = 0

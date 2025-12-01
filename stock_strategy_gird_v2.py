@@ -3,7 +3,7 @@ from datetime import datetime
 from stock_data_fetcher import StockDataFetcher
 from stock_tools import GridBaseLine
 
-class StockStrategyGridV1:
+class StockStrategyGridV2:
     def __init__(self):
         self._grid_size_buy_index = 0
         self._grid_size_sell_index = 0
@@ -11,6 +11,7 @@ class StockStrategyGridV1:
         self._base_line = None
 
         self._grid_size = [
+        #0.015,
             0.02,
             0.03,
             0.05,
@@ -36,37 +37,62 @@ class StockStrategyGridV1:
         return (self._base_line.volume * price * 0.0005 + 10) / self._base_line.volume
 
     def _create_buy_decision(self, stock_code, cur_datetime, price, msg) -> TradeDecision:
-        try:
+        kVolume = 0.0
+        down_edge = self._base_line.price
+        down_edge -= self._base_line.price * self._grid_size[self._grid_size_buy_index]
+
+        while True:
             if self._grid_size_buy_index < len(self._grid_size) - 1:
                 self._grid_size_buy_index += 1
             if self._grid_size_sell_index > 0:
                 self._grid_size_sell_index -= 1
 
-            msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}"
-            self._base_line.price = price + self._get_fee_price(price)
-            return TradeDecision(cur_datetime, "buy", stock_code, price, self._base_line.volume, msg)
-        except Exception as e:
-            print(f"创建买入决策失败:{e}")
+            kVolume += 1.0
+                
+            #计算出新的网格下限
+            down_edge -= self._base_line.price * self._grid_size[self._grid_size_buy_index]
+            #如果当前价格小于网格下限，则继续循环，否则就退出循环
+            #如果连续穿过多个网格，则买入N份
+            if price > down_edge:
+                break
+
+        msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}, 买入{kVolume}份"
+        self._base_line.price = price + self._get_fee_price(price)
+
+        volume = self._base_line.volume * kVolume
+        volume = int(volume / 100) * 100
+        return TradeDecision(cur_datetime, "buy", stock_code, price, self._base_line.volume, msg)
     
     def _create_sell_decision(self, stock_code, cur_datetime, price, msg) -> TradeDecision:
-        try:
+        kVolume = 0.0
+        up_edge = self._base_line.price
+        up_edge += self._base_line.price * self._grid_size[self._grid_size_sell_index]
+
+        while True:
             if self._grid_size_sell_index < len(self._grid_size) - 1:
                 self._grid_size_sell_index += 1
             if self._grid_size_buy_index > 0:
                 self._grid_size_buy_index -= 1
 
-            msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}"
+            kVolume += 1.0
+                
+            #计算出新的网格上限
+            up_edge += self._base_line.price * self._grid_size[self._grid_size_sell_index]
+            #如果当前价格高于网格上限，则继续循环，否则就退出循环
+            #如果连续穿过多个网格，则卖出N份
 
-            self._base_line.price = price
-            return TradeDecision(cur_datetime, "sell", stock_code, price, self._base_line.volume, msg)
-        except Exception as e:
-            print(f"创建卖出决策失败:{e}")
+            if price < up_edge:
+                break
+        
+        msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}, 卖出{kVolume}份"
+
+        self._base_line.price = price
+        volume = self._base_line.volume * kVolume
+        volume = int(volume / 100) * 100
+        return TradeDecision(cur_datetime, "sell", stock_code, price, volume, msg)
 
     def _create_none_decision(self, stock_code, cur_datetime, msg) -> TradeDecision:
-        try:
-            return TradeDecision(cur_datetime, "none", stock_code, 0, 0, msg)
-        except Exception as e:
-            print(f"创建空决策失败:{e}")
+        return TradeDecision(cur_datetime, "none", stock_code, 0, 0, msg)
     def _create_base_line(self, stock_code, cur_price, cur_datetime, account) -> TradeDecision:
         if stock_code in account.holdings:
             total_quantity = account.holdings[stock_code][0] #获取当前持仓
@@ -98,14 +124,17 @@ class StockStrategyGridV1:
         if self._base_line is None:
             return self._create_base_line(stock_code, current_price, cur_datetime, account)
         
-        if current_price < self._base_line.price * (1 - self._grid_size[self._grid_size_buy_index]):
+        grid_up_edge = self._base_line.price * (1 + self._grid_size[self._grid_size_sell_index])
+        grid_down_edge = self._base_line.price * (1 - self._grid_size[self._grid_size_buy_index])
+
+        if current_price < grid_down_edge:
             if self._can_buy_a_base_line(stock_code, current_price, account):
                 msg = f"买入{self._base_line.volume}股，原价格基线为{self._base_line.price}，单次操作{self._base_line.volume}股，新价格基线为{current_price}"
                 return self._create_buy_decision(stock_code, cur_datetime, current_price, msg)
             else:
                 return self._create_none_decision(stock_code, cur_datetime, f"满足买入网格要求，但资金不足，无法买入")
             
-        if current_price > self._base_line.price * (1 + self._grid_size[self._grid_size_sell_index]):
+        if current_price > grid_up_edge:
             if self._can_sell_a_base_line(stock_code, current_price, account):
                 msg = f"卖出{self._base_line.volume}股，原价格基线为{self._base_line.price}，单次操作{self._base_line.volume}股，新价格基线为{current_price}"
                 return self._create_sell_decision(stock_code, cur_datetime, current_price, msg)

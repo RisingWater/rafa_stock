@@ -46,3 +46,8 @@ class StockTools:
             print(f"判断交易日失败: {e}")
             return False
     
+
+class GridBaseLine:
+    def __init__(self, price: float, volume: int):
+        self.price = price
+        self.volume = volume
