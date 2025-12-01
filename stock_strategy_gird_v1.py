@@ -39,6 +39,12 @@ class StockStrategyGridV1:
 
     def _create_buy_decision(self, stock_code, cur_datetime, price, msg) -> TradeDecision:
         try:
+            if self._grid_size_buy_index < len(self._grid_size) - 1:
+                self._grid_size_buy_index += 1
+            if self._grid_size_sell_index > 0:
+                self._grid_size_sell_index -= 1
+
+            msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}"
             self._base_line.price = price
             return TradeDecision(cur_datetime, "buy", stock_code, price, self._base_line.volume, msg)
         except Exception as e:
@@ -46,6 +52,13 @@ class StockStrategyGridV1:
     
     def _create_sell_decision(self, stock_code, cur_datetime, price, msg) -> TradeDecision:
         try:
+            if self._grid_size_sell_index < len(self._grid_size) - 1:
+                self._grid_size_shell_index += 1
+            if self._grid_size_buy_index > 0:
+                self._grid_size_buy_index -= 1
+
+            msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}"
+
             self._base_line.price = price
             return TradeDecision(cur_datetime, "sell", stock_code, price, self._base_line.volume, msg)
         except Exception as e:
