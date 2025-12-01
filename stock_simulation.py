@@ -243,5 +243,5 @@ class StockSimulation:
         else:
             self._log_message(f"跑输了{abs(performance_diff):.2f}%", True)
         
-        self._log_message(f"模拟交易决策已保存到: \n    {self.decision_file}", True)
-        self._log_message(f"模拟交易日志已保存到: \n    {self.log_file}", True)
+        self._log_message(f"模拟交易决策已保存到: \n    {self.decision_file}")
+        self._log_message(f"模拟交易日志已保存到: \n    {self.log_file}")
