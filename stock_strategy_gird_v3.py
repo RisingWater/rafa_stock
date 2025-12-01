@@ -3,7 +3,7 @@ from datetime import datetime
 from stock_data_fetcher import StockDataFetcher
 from stock_tools import GridBaseLine
 
-class StockStrategyGridV2:
+class StockStrategyGridV3:
     def __init__(self):
         self._grid_size_buy_index = 0
         self._grid_size_sell_index = 0
@@ -11,15 +11,17 @@ class StockStrategyGridV2:
         self._base_line = None
 
         self._grid_size = [
-        #0.015,
             0.02,
             0.03,
             0.05,
             0.10
         ]
 
+        self._sell_cache = 0
+        self._buy_cache = 0
+
     def name(self) -> str:
-        return "Grid Strategy v2"
+        return "Grid Strategy v3"
     
     def get_grid_buy_size(self):
         index = self._grid_size_buy_index
@@ -71,13 +73,37 @@ class StockStrategyGridV2:
             #如果连续穿过多个网格，则买入N份
             if price > down_edge:
                 break
+        
+        if self._sell_cache == kVolume:
+            #如果买入的份数和缓存中未卖出的份数一致，则不进行买入
+            self._base_line.price = price + self._get_fee_price(price)
+            #清空缓存
+            self._sell_cache = 0
+            msg += f", 新买入网格间隔为{self.get_grid_buy_size()}, 新卖出网格间隔为{self.get_grid_sell_size()}, 由于有缓存，不进行买入，清空缓存"
+            return self._create_none_decision(stock_code, cur_datetime, msg)
+        elif self._sell_cache > kVolume:
+            #如果买入的份数小于缓存中未卖出的份数，则卖出全部缓存减去kVolume份
+            volume = self._base_line.volume * (self._sell_cache - kVolume)
+            self._base_line.price = price + self._get_fee_price(price)
+            #清空缓存
+            self._sell_cache = 0
+            msg += f", 新买入网格间隔为{self.get_grid_buy_size()}, 新卖出网格间隔为{self.get_grid_sell_size()}, 由于有缓存，不进行买入，反而进行卖出{volume}份股票，清空缓存"
+            return TradeDecision(cur_datetime, "sell", stock_code, price, volume, msg)
+        else:
+            #如果需要买入的分数大于缓存中未卖出的分数，则买入kVolumue减去缓存的分数
+            kVolume = kVolume - self._sell_cache
+            self._sell_cache = 0
+        
+            #如果kVolume还大于1，则建立买入缓存
+            if kVolume > 1.0:
+                self._buy_cache += kVolume
 
-        msg += f", 新买入网格间隔为{self.get_grid_buy_size()}, 新卖出网格间隔为{self.get_grid_sell_size()}, 买入{kVolume}份"
-        self._base_line.price = price + self._get_fee_price(price)
+            msg += f", 新买入网格间隔为{self.get_grid_buy_size()}, 新卖出网格间隔为{self.get_grid_sell_size()}, 卖出1份股票，缓存{self._buy_cache}份"
+            self._base_line.price = price + self._get_fee_price(price)
 
-        volume = self._base_line.volume * kVolume
-        volume = int(volume / 100) * 100
-        return TradeDecision(cur_datetime, "buy", stock_code, price, self._base_line.volume, msg)
+            volume = self._base_line.volume * kVolume
+            volume = int(volume / 100) * 100
+            return TradeDecision(cur_datetime, "buy", stock_code, price, self._base_line.volume, msg)
     
     def _create_sell_decision(self, stock_code, cur_datetime, price, msg) -> TradeDecision:
         kVolume = 0.0
@@ -97,13 +123,37 @@ class StockStrategyGridV2:
 
             if price < up_edge:
                 break
-        
-        msg += f", 新买入网格间隔为{self.get_grid_buy_size()}, 新卖出网格间隔为{self.get_grid_sell_size()}, 卖出{kVolume}份"
 
-        self._base_line.price = price
-        volume = self._base_line.volume * kVolume
-        volume = int(volume / 100) * 100
-        return TradeDecision(cur_datetime, "sell", stock_code, price, volume, msg)
+        if self._buy_cache == kVolume:
+            #如果卖出的份数和缓存中未买入的份数一致，则不进行卖出
+            self._base_line.price = price
+            #清空缓存
+            self._buy_cache = 0
+            msg += f", 新买入网格间隔为{self.get_grid_buy_size()}, 新卖出网格间隔为{self.get_grid_sell_size()}, 由于有缓存，不进行卖出，清空缓存"
+            return self._create_none_decision(stock_code, cur_datetime, msg)
+        elif self._buy_cache > kVolume:
+            #如果卖出的份数小于缓存中未买入的份数，则卖出全部缓存减去kVolume份
+            volume = self._base_line.volume * (self._buy_cache - kVolume)
+            self._base_line.price = price
+            #清空缓存
+            self._buy_cache = 0
+            msg += f", 新买入网格间隔为{self.get_grid_buy_size()}, 新卖出网格间隔为{self.get_grid_sell_size()}, 由于有缓存，不进行卖出，反而进行买入{volume}份股票，清空缓存"
+            return TradeDecision(cur_datetime, "buy", stock_code, price, volume, msg)
+        else:
+            #如果需要卖出的分数大于缓存中未买入的分数，则买入kVolumue减去缓存的分数
+            kVolume = kVolume - self._buy_cache
+            self._buy_cache = 0
+
+            #如果kVolume还大于1，则建立买入缓存
+            if kVolume > 1.0:
+                self._sell_cache += kVolume
+
+            msg += f", 新买入网格间隔为{self.get_grid_buy_size()}, 新卖出网格间隔为{self.get_grid_sell_size()}, 卖出1份股票，缓存{self._sell_cache}份"
+
+            self._base_line.price = price
+            volume = self._base_line.volume
+            volume = int(volume / 100) * 100
+            return TradeDecision(cur_datetime, "sell", stock_code, price, volume, msg)
 
     def _create_none_decision(self, stock_code, cur_datetime, msg) -> TradeDecision:
         return TradeDecision(cur_datetime, "none", stock_code, 0, 0, msg)

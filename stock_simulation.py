@@ -9,7 +9,7 @@ import uuid
 import json
 
 class StockSimulation:
-    def __init__(self, stock_code, stock_name, start_date, end_date, strategy, initial_cash=100000):
+    def __init__(self, stock_code, stock_name, start_date, end_date, strategy, initial_cash=100000, log_dir_path: str = "./log", summary_file = None):
         self.simluation_name = f"{stock_name}({stock_code})-{start_date.strftime('%Y-%m%d')}-{end_date.strftime('%m%d')}-{strategy.name()}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
         self.stock_code = stock_code
@@ -19,10 +19,10 @@ class StockSimulation:
         self.end_date = end_date
         self.uuid = str(uuid.uuid4())
 
-        os.makedirs('./log', exist_ok=True)
+        os.makedirs(log_dir_path, exist_ok=True)
 
-        self.log_file = f"./log/{self.simluation_name}.log"
-        self.decision_file = f"./log/{self.simluation_name}.json"
+        self.log_file = f"{log_dir_path}/{self.simluation_name}.log"
+        self.decision_file = f"{log_dir_path}/{self.simluation_name}.json"
 
         self.account = None
 
@@ -32,6 +32,8 @@ class StockSimulation:
         self._setup_decision_file()
         self._data_preparation()
         self._initial_cash = initial_cash
+
+        self._summary_file = summary_file
 
     def set_initial_state(self, initial_cash: float):
         self.account = TPlusOneStockAccount(initial_cash)
@@ -48,7 +50,6 @@ class StockSimulation:
                 f.write(f"期间: {self.start_date} 至 {self.end_date}\n")
                 f.write(f"策略: {self.strategy.name()}\n")
                 f.write("=" * 50 + "\n\n")
-            print(f"日志文件已创建: {self.log_file}")
         except Exception as e:
             print(f"创建日志文件失败: {e}")
 
@@ -229,12 +230,12 @@ class StockSimulation:
         new_value = self.account.get_total_value(end_prices)
         new_change_rate = (new_value - self._initial_cash) / self._initial_cash
 
-        self._log_message(f"\n=== 模拟交易结束 ===", True)
+        self._log_message(f"\n=== 模拟交易结束 ===")
         self._log_message(f"股票：{self.stock_name}({self.stock_code})", True)
-        self._log_message(f"初始资金：{self._initial_cash}", True)
+        self._log_message(f"初始资金：{self._initial_cash}")
         self._log_message(f"模拟期间：{self.start_date.strftime('%Y-%m-%d')} 至 {self.end_date.strftime('%Y-%m-%d')}", True)
-        self._log_message(f"初始股票价格：{start_price:.2f} 元， 结束股票价格：{end_price:.2f} 元，涨跌幅：{change_rate*100:.2f}%", True)
-        self._log_message(f"理论总资产（不交易情况下）：{origin_value:.2f} 元, 利润率：{change_rate*100:.2f}%", True)
+        self._log_message(f"初始股票价格：{start_price:.2f} 元， 结束股票价格：{end_price:.2f} 元", True)
+        self._log_message(f"理论总资产（不交易）：{origin_value:.2f} 元, 利润率：{change_rate*100:.2f}%", True)
         self._log_message(f"实际总资产（交易后）：{new_value:.2f} 元, 利润率：{new_change_rate*100:.2f}%", True)
         performance_diff = (new_change_rate - change_rate) * 100  # 转换为百分比
 
@@ -245,3 +246,8 @@ class StockSimulation:
         
         self._log_message(f"模拟交易决策已保存到: \n    {self.decision_file}")
         self._log_message(f"模拟交易日志已保存到: \n    {self.log_file}")
+
+        if self._summary_file:
+            self._summary_file.write(f"{self.stock_name}({self.stock_code}) \t理论利润率：{change_rate*100:8.2f}% \t实际利润率：{new_change_rate*100:8.2f}% \t跑赢了{performance_diff:6.2f}%\n")
+
+        return change_rate, new_change_rate

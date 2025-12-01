@@ -36,37 +36,28 @@ class StockStrategyGridV1:
         return (self._base_line.volume * price * 0.0005 + 10) / self._base_line.volume
 
     def _create_buy_decision(self, stock_code, cur_datetime, price, msg) -> TradeDecision:
-        try:
-            if self._grid_size_buy_index < len(self._grid_size) - 1:
-                self._grid_size_buy_index += 1
-            if self._grid_size_sell_index > 0:
-                self._grid_size_sell_index -= 1
+        if self._grid_size_buy_index < len(self._grid_size) - 1:
+            self._grid_size_buy_index += 1
+        if self._grid_size_sell_index > 0:
+            self._grid_size_sell_index -= 1
 
-            msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}"
-            self._base_line.price = price + self._get_fee_price(price)
-            return TradeDecision(cur_datetime, "buy", stock_code, price, self._base_line.volume, msg)
-        except Exception as e:
-            print(f"创建买入决策失败:{e}")
-    
+        msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}"
+        self._base_line.price = price + self._get_fee_price(price)
+        return TradeDecision(cur_datetime, "buy", stock_code, price, self._base_line.volume, msg)
+
     def _create_sell_decision(self, stock_code, cur_datetime, price, msg) -> TradeDecision:
-        try:
-            if self._grid_size_sell_index < len(self._grid_size) - 1:
-                self._grid_size_sell_index += 1
-            if self._grid_size_buy_index > 0:
-                self._grid_size_buy_index -= 1
+        if self._grid_size_sell_index < len(self._grid_size) - 1:
+            self._grid_size_sell_index += 1
+        if self._grid_size_buy_index > 0:
+            self._grid_size_buy_index -= 1
 
-            msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}"
+        msg += f", 新买入网格间隔为{self._grid_size[self._grid_size_buy_index]}, 新卖出网格间隔为{self._grid_size[self._grid_size_sell_index]}"
 
-            self._base_line.price = price
-            return TradeDecision(cur_datetime, "sell", stock_code, price, self._base_line.volume, msg)
-        except Exception as e:
-            print(f"创建卖出决策失败:{e}")
-
+        self._base_line.price = price
+        return TradeDecision(cur_datetime, "sell", stock_code, price, self._base_line.volume, msg)
     def _create_none_decision(self, stock_code, cur_datetime, msg) -> TradeDecision:
-        try:
-            return TradeDecision(cur_datetime, "none", stock_code, 0, 0, msg)
-        except Exception as e:
-            print(f"创建空决策失败:{e}")
+        return TradeDecision(cur_datetime, "none", stock_code, 0, 0, msg)
+
     def _create_base_line(self, stock_code, cur_price, cur_datetime, account) -> TradeDecision:
         if stock_code in account.holdings:
             total_quantity = account.holdings[stock_code][0] #获取当前持仓
