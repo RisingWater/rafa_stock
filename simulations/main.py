@@ -1,11 +1,12 @@
-from stock_simulation import StockSimulation
-
-from datetime import datetime
-from stock_strategy_deepseek import DeepSeekStrategy
-from stock_strategy_gird_v1 import StockStrategyGridV1
-from stock_strategy_gird_v2 import StockStrategyGridV2
-from stock_strategy_gird_v3 import StockStrategyGridV3
+import sys
 import os
+sys.path.append("../")
+from datetime import datetime
+from simulations.stock_simulation import StockSimulation
+from simulations.stock_strategy_deepseek import DeepSeekStrategy
+from simulations.stock_strategy_gird_v1 import StockStrategyGridV1
+from simulations.stock_strategy_gird_v2 import StockStrategyGridV2
+from simulations.stock_strategy_gird_v3 import StockStrategyGridV3
 
 if __name__ == '__main__':
     stocks = [

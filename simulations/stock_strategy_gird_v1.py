@@ -1,4 +1,4 @@
-from stock_account_tplus1 import TPlusOneStockAccount, TradeDecision
+from simulations.stock_account_tplus1 import TPlusOneStockAccount, TradeDecision
 from datetime import datetime
 from stock_data_fetcher import StockDataFetcher
 from stock_tools import GridBaseLine

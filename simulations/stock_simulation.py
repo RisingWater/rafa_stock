@@ -1,6 +1,6 @@
 
 from datetime import datetime, timedelta
-from stock_account_tplus1 import TPlusOneStockAccount, TradeDecision
+from simulations.stock_account_tplus1 import TPlusOneStockAccount, TradeDecision
 from stock_data_fetcher import StockDataFetcher
 from deepseek import DeepSeekAPI
 from stock_tools import StockTools

@@ -1,6 +1,6 @@
 from prompt import PromptGenerator
 from deepseek import DeepSeekAPI
-from stock_account_tplus1 import TPlusOneStockAccount, TradeDecision
+from simulations.stock_account_tplus1 import TPlusOneStockAccount, TradeDecision
 from datetime import datetime
 
 class DeepSeekStrategy:
