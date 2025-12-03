@@ -9,7 +9,7 @@ import pandas as pd
 import requests
 import sys
 
-# 方法1：使用已安装的系统字体
+matplotlib.use('Agg')  # 设置后端
 matplotlib.rcParams['font.sans-serif'] = ['WenQuanYi Micro Hei', 'WenQuanYi Zen Hei', 'DejaVu Sans']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
