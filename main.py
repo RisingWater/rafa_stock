@@ -9,31 +9,34 @@ import os
 
 if __name__ == '__main__':
     stocks = [
-        { 'stock_code' : '002396', 'stock_name' : '星网锐捷' },
-        { 'stock_code' : '002170', 'stock_name' : '芭田股份' },
-        { 'stock_code' : '000063', 'stock_name' : '中兴通讯' },
-        { 'stock_code' : '600203', 'stock_name' : '福日电子' },
-        { 'stock_code' : '600036', 'stock_name' : '招商银行' },
-        { 'stock_code' : '301165', 'stock_name' : '锐捷网络' },
-        { 'stock_code' : '603828', 'stock_name' : 'ST柯利达' },
-        { 'stock_code' : '002352', 'stock_name' : '顺丰控股' },
-        { 'stock_code' : '000901', 'stock_name' : '航天科技' },
-        { 'stock_code' : '601377', 'stock_name' : '兴业证券' },
-        { 'stock_code' : '002222', 'stock_name' : '福晶科技' },
-        { 'stock_code' : '002487', 'stock_name' : '大金重工' },
-        { 'stock_code' : '601619', 'stock_name' : '嘉泽新能' },
-        { 'stock_code' : '002065', 'stock_name' : '东华软件' },
+        #{ 'stock_code' : '002396', 'stock_name' : '星网锐捷' },
+        #{ 'stock_code' : '002170', 'stock_name' : '芭田股份' },
+        #{ 'stock_code' : '000063', 'stock_name' : '中兴通讯' },
+        #{ 'stock_code' : '600203', 'stock_name' : '福日电子' },
+        #{ 'stock_code' : '600036', 'stock_name' : '招商银行' },
+        #{ 'stock_code' : '301165', 'stock_name' : '锐捷网络' },
+        #{ 'stock_code' : '603828', 'stock_name' : 'ST柯利达' },
+        #{ 'stock_code' : '002352', 'stock_name' : '顺丰控股' },
+        #{ 'stock_code' : '000901', 'stock_name' : '航天科技' },
+        #{ 'stock_code' : '601377', 'stock_name' : '兴业证券' },
+        #{ 'stock_code' : '002222', 'stock_name' : '福晶科技' },
+        #{ 'stock_code' : '002487', 'stock_name' : '大金重工' },
+        #{ 'stock_code' : '601619', 'stock_name' : '嘉泽新能' },
+        #{ 'stock_code' : '002065', 'stock_name' : '东华软件' },
+        #{ 'stock_code' : '603011', 'stock_name' : '合锻智能' },
+        #{ 'stock_code' : '002428', 'stock_name' : '云南褚业' },
+        { 'stock_code' : '603220', 'stock_name' : '中贝通信' },
     ]
 
-    initial_cash = 100000
+    initial_cash = 50000
 
-    start_date = datetime(2025, 9, 1)
-    end_date = datetime(2025, 11, 28)
+    start_date = datetime(2025, 11, 6)
+    end_date = datetime(2025, 12, 1)
 
     stratepys_classes = [
         StockStrategyGridV1,
-        StockStrategyGridV2,
-        StockStrategyGridV3,
+        #StockStrategyGridV2,
+        #StockStrategyGridV3,
     ]
 
     os.makedirs('./log', exist_ok=True)

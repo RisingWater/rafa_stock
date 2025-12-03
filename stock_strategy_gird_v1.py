@@ -11,10 +11,7 @@ class StockStrategyGridV1:
         self._base_line = None
 
         self._grid_size = [
-            0.02,
-            0.03,
-            0.05,
-            0.10
+            0.02
         ]
 
     def name(self) -> str:
