@@ -1,12 +1,8 @@
 import pandas as pd
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from stock_tools import StockTools
 from stock_akshare import StockAKShare
-
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']  # 用来正常显示中文标签
-plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
 
 class StockDataFetcher:
     """

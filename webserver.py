@@ -1,4 +1,5 @@
 import os
+import matplotlib
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -7,6 +8,10 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 import sys
+
+# 方法1：使用已安装的系统字体
+matplotlib.rcParams['font.sans-serif'] = ['WenQuanYi Micro Hei', 'WenQuanYi Zen Hei', 'DejaVu Sans']
+matplotlib.rcParams['axes.unicode_minus'] = False
 
 app = FastAPI(title='Kronos', version='1.0')
 fetcher = StockDataFetcher()
