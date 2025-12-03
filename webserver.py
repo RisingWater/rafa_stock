@@ -164,8 +164,6 @@ async def predict_endpoint(request: PredictRequest):
         if request.predict_type == 'daily':
             end_date = end_date + timedelta(days=-1)
             start_date = end_date - timedelta(days=365)
-            print(f"start : {start_date}")
-            print(f"end   : {end_date}")
             pd_data = fetcher.get_daily_kline(request.stock_code, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"))
             if request.predict_len > 7:
                 return {"message": "Invalid predict_len"}
@@ -188,7 +186,6 @@ async def predict_endpoint(request: PredictRequest):
             return {"message": "No data available for prediction"}
         
         print(f"{pd_data}")
-        
         
         # 转换历史数据为图表需要的格式
         history_data_for_chart = []
@@ -229,7 +226,6 @@ async def predict_endpoint(request: PredictRequest):
             response_data = response.json()
             
             if 'prediction' in response_data:
-                print(response_data['prediction'])
                 # ✅ 使用转换后的历史数据
                 chart_buffer = generate_prediction_chart(
                     history_data=history_data_for_chart[-5:],
