@@ -243,18 +243,23 @@ def generate_prediction_chart(history_data, prediction_data, stock_code, predict
                   framealpha=0.95, shadow=True, fancybox=True, borderpad=0.8)
     
     # 7. 设置x轴时间格式 - 增大字体
-    if len(prediction_df) > 0:
-        time_span = prediction_df['timestamps'].max() - prediction_df['timestamps'].min()
-        if time_span.days > 1:
-            date_format = '%m-%d %H:%M'
-        elif time_span.days == 1:
-            date_format = '%m-%d %H:%M'
-        else:
-            date_format = '%H:%M'
+    if predict_type == "daily":
+        date_format = '%m-%d'
+        ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+    elif predict_type == "min5":
+        date_format = '%m-%d %H:%M'
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
+    elif predict_type == "min15":
+        date_format = '%m-%d %H:%M'
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
     else:
-        date_format = '%Y-%m-%d %H:%M'
-    
+        date_format = '%m-%d'
+        ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+
     ax.xaxis.set_major_formatter(mdates.DateFormatter(date_format))
+    
+    
+    
     ax.tick_params(axis='x', labelsize=13, rotation=45)
     ax.tick_params(axis='y', labelsize=13)
     
