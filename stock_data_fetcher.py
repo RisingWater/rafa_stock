@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import matplotlib.dates as mdates
 from stock_tools import StockTools
 from stock_akshare import StockAKShare
+from stock_db import StockDB
 
 class StockDataFetcher:
     """
@@ -27,7 +28,6 @@ class StockDataFetcher:
         end_date = tools.get_trading_day(end_date, -1)
         
         try:
-            from stock_db import StockDB
             db = StockDB()
 
             # 先检查最新日期
@@ -99,7 +99,6 @@ class StockDataFetcher:
             end_datetime = end_date
         
         try:
-            from stock_db import StockDB
             db = StockDB()
             
             # 获取数据库中最新的分钟数据时间
@@ -134,9 +133,6 @@ class StockDataFetcher:
 
     def get_daily_end_price(self, stock_code: str, current_datetime: datetime) -> float:
         try:
-            from stock_db import StockDB
-            from datetime import datetime
-            
             db = StockDB()
 
             db_data = db.get_daily_data(stock_code, current_datetime.strftime("%Y-%m-%d"), current_datetime.strftime("%Y-%m-%d"))
@@ -153,9 +149,6 @@ class StockDataFetcher:
 
     def get_daily_start_price(self, stock_code: str, current_datetime: datetime) -> float:
         try:
-            from stock_db import StockDB
-            from datetime import datetime
-            
             db = StockDB()
 
             db_data = db.get_daily_data(stock_code, current_datetime.strftime("%Y-%m-%d"), current_datetime.strftime("%Y-%m-%d"))
@@ -172,9 +165,6 @@ class StockDataFetcher:
             
     def get_price(self, stock_code: str, period: str, current_datetime: datetime) -> float:
         try:
-            from stock_db import StockDB
-            from datetime import datetime
-            
             db = StockDB()
 
             current_datetime += timedelta(minutes=15)
@@ -220,9 +210,6 @@ class StockDataFetcher:
     def is_trade_success(self, stock_code: str, period: str, price: float, quantity: int, action: str, current_datetime: str) -> bool:
         """判断交易是否成功"""
         try:
-            from stock_db import StockDB
-            from datetime import datetime
-            
             db = StockDB()
             
             # 统一转换为datetime对象
@@ -263,3 +250,22 @@ class StockDataFetcher:
             print(f"❌ 获取判断交易成功与否失败: {e}")
             return False
     
+    def get_all_stock_info(self):
+        db = StockDB()
+
+        pd = db.get_stock_info()
+
+        if pd.empty:
+            zz1000 = StockAKShare().get_zz1000_stockinfo_from_api()
+            db.save_stock_info(zz1000)
+
+            hs300 = StockAKShare().get_hs300_stockinfo_from_api()
+            db.save_stock_info(hs300)
+
+            pd = db.get_stock_info()
+
+            if pd.empty:
+                print("❌ 获取股票信息失败")
+        
+        return pd
+

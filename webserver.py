@@ -42,6 +42,7 @@ async def predict_endpoint(request: PredictRequest):
     """预测接口"""
     try:
         end_date = datetime.strptime(request.predict_date, "%Y-%m-%d")
+        print(request)
 
         if request.predict_type == 'daily':
             end_date = end_date + timedelta(days=-1)

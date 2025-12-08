@@ -123,3 +123,37 @@ class StockAKShare:
         except Exception as e:
             print(f"❌ 从新浪API获取分钟线数据失败: {e}")
             return pd.DataFrame()
+        
+    def _get_index_info_from_api(self, symbol, symbol_name):
+        try:
+            index_stock_cons_csindex_df = ak.index_stock_cons_csindex(symbol=symbol)
+            if not index_stock_cons_csindex_df.empty:
+                stock_info = index_stock_cons_csindex_df.rename(columns={
+                    '日期': 'date',
+                    '指数代码': 'index_code',
+                    '指数名称': 'index_name',
+                    '指数英文名称': 'index_name_en',
+                    '成分券代码': 'stock_code',
+                    '成分券名称': 'stock_name',
+                    '成分券英文名称': 'stock_name_en',
+                    '交易所': 'exchange_name',
+                    '交易所英文名称': 'exchange_name_en'
+                })
+
+                print(f"✅ 从中证指数网站获取{symbol_name}({symbol})成分股成功: {len(stock_info)} 条")
+                return stock_info
+        
+            return pd.DataFrame()
+
+        except Exception as e:
+            print(f"❌ 从中证指数网站获取{symbol_name}({symbol})成分股数据失败: {e}")
+            return pd.DataFrame()
+
+    def get_zz1000_stockinfo_from_api(self):
+        symbol = '000852'
+        return self._get_index_info_from_api(symbol, '中证1000')
+        
+
+    def get_hs300_stockinfo_from_api(self):
+        symbol = '000300'
+        return self._get_index_info_from_api(symbol, '沪深300')

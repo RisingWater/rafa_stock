@@ -7,7 +7,9 @@ class StockDB:
     def __init__(self, db_path='stock_data.db'):
         self.db_path = db_path
         self._init_daily_database()
-        self._init_min_database()  # 只需要初始化统一分钟表
+        self._init_min_database()
+        self._init_stock_code_db()
+        self._init_stock_predict_daily_db()
     
     def _init_daily_database(self):
         """初始化日线数据库"""
@@ -50,6 +52,42 @@ class StockDB:
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_minute_datetime ON minute_kline(datetime)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_minute_period ON minute_kline(period)')
         
+        conn.commit()
+        conn.close()
+
+    def _init_stock_code_db(self):
+        """初始化股票代码数据库"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS stock_codes (
+                stock_code TEXT PRIMARY KEY,
+                stock_name TEXT
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
+
+    def _init_stock_predict_daily_db(self):
+        """初始化日线数据库"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS predict_daily_kline (
+                stock_code TEXT,
+                date DATE,
+                open REAL,
+                high REAL,
+                low REAL,
+                close REAL,
+                PRIMARY KEY (stock_code, date)
+            )
+        ''')
+
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_predict_daily_stock_date ON predict_daily_kline(stock_code, date)')
         conn.commit()
         conn.close()
     
@@ -128,8 +166,8 @@ class StockDB:
                 df['date'] = pd.to_datetime(df['date'])
             return df
         except:
-            return pd.DataFrame()
-  
+            return pd.DataFrame() 
+
     def get_min_data(self, stock_code, period, start_datetime, end_datetime):
         """
         从统一分钟表获取分钟K线数据
@@ -188,3 +226,83 @@ class StockDB:
             return result[0] if result[0] else None
         except:
             return None
+        
+    def save_stock_info(self, stockinfo):
+        """更新股票数据库"""
+        if stockinfo.empty:
+            return False
+        
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            saved_count = 0
+            for _, row in stockinfo.iterrows():
+                cursor.execute('''
+                    INSERT OR REPLACE INTO stock_codes 
+                    (stock_code, stock_name)
+                    VALUES (?, ?)
+                ''', (
+                    row['stock_code'], row['stock_name']
+                ))
+                saved_count += 1
+            
+            conn.commit()
+            conn.close()
+            print(f"✅ 保存股票数据成功:{saved_count} 条")
+            return True
+        except Exception as e:
+            print(f"❌ 保存保存股票数据失败: {e}")
+            return False
+
+    def get_stock_info(self):
+        """获取股票数据库"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            query = '''
+                SELECT * FROM stock_codes
+            '''
+            df = pd.read_sql_query(query, conn)
+            conn.close()
+            return df
+        except:
+            return pd.DataFrame() 
+        
+    def save_predict_daily_data(self, stock_code, predict_date, predict_data):
+        """保存预测数据"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT OR REPLACE INTO predict_daily_kline 
+                (stock_code, date, open, high, low, close)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                stock_code, predict_date,
+                predict_data['open'], predict_data['high'], predict_data['low'], predict_data['close']
+            ))
+
+            conn.commit()
+            conn.close()
+            print(f"✅ 保存股票预测数据成功:{stock_code} {predict_date}")
+            return True
+        except Exception as e:
+            print(f"❌ 保存保存预测数据失败: {e}")
+            return False
+        
+    def get_predict_daily_data(self, stock_code, predict_date):
+        """获取预测数据"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            query = '''
+                SELECT * FROM predict_daily_kline 
+                WHERE stock_code = ? AND date = ?
+            '''
+            df = pd.read_sql_query(query, conn, params=[stock_code, predict_date])
+            conn.close()
+            return df
+        except:
+            return pd.DataFrame() 
+
+            
+            
