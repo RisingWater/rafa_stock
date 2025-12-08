@@ -25,7 +25,7 @@ class StockDataFetcher:
         
         # 修正结束日期为交易日
         tools = StockTools()
-        end_date = tools.get_trading_day(end_date, -1)
+        end_date = tools.get_trading_day(end_date, 0)
         
         try:
             db = StockDB()
@@ -89,7 +89,7 @@ class StockDataFetcher:
         start_date_only = start_date.split(' ')[0] if ' ' in start_date else start_date
 
         # 修正结束日期为交易日
-        corrected_end_date = tools.get_trading_day(end_date_only, -1) or end_date_only
+        corrected_end_date = tools.get_trading_day(end_date_only, 0) or end_date_only
         
         # 转换为完整的时间范围（9:30-15:00）
         start_datetime = f"{start_date_only} 09:30:00"
