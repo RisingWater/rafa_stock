@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 import sys
+import time
 from pick_stock import StockPicker
 from chart_generate import generate_prediction_chart, setup_environment
 
@@ -159,6 +160,8 @@ def predict_timer():
             # 检查当前时间是否为 14:45:00
             if current_time.hour == 14 and current_time.minute == 45 and current_time.second == 0:
                 select_stocks = picker.pick_up_stock()
+        except Exception as e:
+            print(e)
 
         time.sleep(60)
 
