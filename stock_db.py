@@ -2,6 +2,7 @@
 import sqlite3
 import pandas as pd
 from datetime import datetime, timedelta
+from stock_tools import StockTools
 
 class StockDB:
     def __init__(self, db_path='stock_data.db'):
@@ -10,6 +11,7 @@ class StockDB:
         self._init_min_database()
         self._init_stock_code_db()
         self._init_stock_predict_daily_db()
+        self._init_stock_realtime_daily_db()
     
     def _init_daily_database(self):
         """初始化日线数据库"""
@@ -63,7 +65,8 @@ class StockDB:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS stock_codes (
                 stock_code TEXT PRIMARY KEY,
-                stock_name TEXT
+                stock_name TEXT,
+                stock_type TEXT
             )
         ''')
         
@@ -83,6 +86,28 @@ class StockDB:
                 high REAL,
                 low REAL,
                 close REAL,
+                PRIMARY KEY (stock_code, date)
+            )
+        ''')
+
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_predict_daily_stock_date ON predict_daily_kline(stock_code, date)')
+        conn.commit()
+        conn.close()
+
+    def _init_stock_realtime_daily_db(self):
+        """初始化日线数据库"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS realtime_daily_kline (
+                stock_code TEXT,
+                date DATE,
+                open REAL,
+                high REAL,
+                low REAL,
+                close REAL,
+                volume INTEGER,
                 PRIMARY KEY (stock_code, date)
             )
         ''')
@@ -227,7 +252,7 @@ class StockDB:
         except:
             return None
         
-    def save_stock_info(self, stockinfo):
+    def save_stock_info(self, stockinfo, stock_type):
         """更新股票数据库"""
         if stockinfo.empty:
             return False
@@ -240,10 +265,10 @@ class StockDB:
             for _, row in stockinfo.iterrows():
                 cursor.execute('''
                     INSERT OR REPLACE INTO stock_codes 
-                    (stock_code, stock_name)
-                    VALUES (?, ?)
+                    (stock_code, stock_name, stock_type)
+                    VALUES (?, ?, ?)
                 ''', (
-                    row['stock_code'], row['stock_name']
+                    row['stock_code'], row['stock_name'], stock_type
                 ))
                 saved_count += 1
             
@@ -287,7 +312,7 @@ class StockDB:
             print(f"✅ 保存股票预测数据成功:{stock_code} {predict_date}")
             return True
         except Exception as e:
-            print(f"❌ 保存保存预测数据失败: {e}")
+            print(f"❌ 保存股票预测数据失败: {e}")
             return False
         
     def get_predict_daily_data(self, stock_code, predict_date):
@@ -303,6 +328,45 @@ class StockDB:
             return df
         except:
             return pd.DataFrame() 
+
+    def save_realtime_daily_date(self, stock_code, realtime_date, realtime_data):
+        """保存实时数据"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT OR REPLACE INTO realtime_daily_kline 
+                (stock_code, date, open, high, low, close, volume)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                stock_code, realtime_date,
+                realtime_data['open'], realtime_data['high'], realtime_data['low'], realtime_data['close'], realtime_data['volume']
+            ))
+
+            conn.commit()
+            conn.close()
+            print(f"✅ 保存股票实时数据成功:{stock_code} {realtime_date}")
+            return True
+        except Exception as e:
+            print(f"❌ 保存股票实时数据失败: {e}")
+            return False
+
+    def get_realtime_daily_data(self, stock_code, realtime_date):
+        """获取实时数据"""
+        try:
+            stock_code_prefix = StockTools().get_stock_code_with_prefix(stock_code)
+            conn = sqlite3.connect(self.db_path)
+            query = '''
+                SELECT * FROM realtime_daily_kline 
+                WHERE stock_code = ? AND date = ?
+            '''
+            df = pd.read_sql_query(query, conn, params=[stock_code_prefix, realtime_date])
+            conn.close()
+            return df
+        except:
+            return pd.DataFrame() 
+
+    
 
             
             

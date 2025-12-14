@@ -1,11 +1,12 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import akshare as ak
+import time
 
 class StockAKShare:
     def __init__(self):
         pass
-    def get_daily_kline_from_api(self, stock_code, start_date, end_date, adjust='qfq'):
+    def get_daily_kline_from_api(self, stock_code, start_date, end_date, adjust='qfq', sleep_time=0):
         """
         从新浪财经API获取日K线数据
         
@@ -40,6 +41,11 @@ class StockAKShare:
                 end_date=end_date,
                 adjust=adjust
             )
+
+            # sleep防止调用过于频繁
+            if sleep_time > 0:
+                print(f"💤 休眠 {sleep_time} 秒...")
+                time.sleep(sleep_time)
             
             if not stock_data.empty:
                 # 新浪接口返回的列名已经是英文，但需要确保格式一致
@@ -157,3 +163,31 @@ class StockAKShare:
     def get_hs300_stockinfo_from_api(self):
         symbol = '000300'
         return self._get_index_info_from_api(symbol, '沪深300')
+
+    def get_csi500_stockinfo_from_api(self):
+        symbol = '000905'
+        return self._get_index_info_from_api(symbol, '中证500')
+
+    def get_today_data_realtime(self, date):
+        stock_data = ak.stock_zh_a_spot()
+        if not stock_data.empty:
+            required_columns = ['代码', '名称', '最新价', '今开', '最高', '最低', '成交量', '名称']
+            stock_data = stock_data[required_columns]
+            # 重命名列名为英文
+            stock_data = stock_data.rename(columns={
+                '代码': 'stock_code',
+                '名称': 'stock_name',
+                '最新价': 'close', 
+                '今开': 'open',
+                '最高': 'high',
+                '最低': 'low',
+                '成交量': 'volume',
+                '名称': 'stock_name'
+            })
+
+            # 为所有行添加相同的date值
+            stock_data['date'] = date
+
+            return stock_data
+
+        return pd.DataFrame()

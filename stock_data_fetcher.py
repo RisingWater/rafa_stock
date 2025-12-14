@@ -13,7 +13,7 @@ class StockDataFetcher:
     
     def __init__(self):
         pass
-    def get_daily_kline(self, stock_code, start_date=None, end_date=None):
+    def get_daily_kline(self, stock_code, start_date=None, end_date=None, sleep_time=0):
         """
         获取股票日K线数据 - 简化缓存版本
         """
@@ -41,7 +41,7 @@ class StockDataFetcher:
                 # 否则从API获取数据并更新数据库
                 # 直接获取1000天的数据，确保数据完整
                 one_year_ago = (datetime.now() - timedelta(days=1000)).strftime("%Y%m%d")
-                full_data = StockAKShare().get_daily_kline_from_api(stock_code, one_year_ago, end_date.replace('-', ''))
+                full_data = StockAKShare().get_daily_kline_from_api(stock_code, one_year_ago, end_date.replace('-', ''), sleep_time)
 
                 if not full_data.empty:
                     db.save_daily_data(stock_code, full_data)
@@ -52,6 +52,11 @@ class StockDataFetcher:
                         (full_data['date'] >= pd.to_datetime(start_date)) & 
                         (full_data['date'] <= pd.to_datetime(end_date))
                     ]
+
+                    required_columns = ['date', 'open', 'high', 'low', 'close', 'volume', 'amount']
+                    update_data = update_data[required_columns]
+                    update_data['stock_code'] = stock_code
+
                     return update_data
                 else:
                     print("⚠️ 未获取到API数据")
@@ -257,10 +262,13 @@ class StockDataFetcher:
 
         if pd.empty:
             zz1000 = StockAKShare().get_zz1000_stockinfo_from_api()
-            db.save_stock_info(zz1000)
+            db.save_stock_info(zz1000, "zz1000")
 
             hs300 = StockAKShare().get_hs300_stockinfo_from_api()
-            db.save_stock_info(hs300)
+            db.save_stock_info(hs300, "hs300")
+
+            csi500 = StockAKShare().get_csi500_stockinfo_from_api()
+            db.save_stock_info(csi500, "csi500")
 
             pd = db.get_stock_info()
 
@@ -268,4 +276,24 @@ class StockDataFetcher:
                 print("❌ 获取股票信息失败")
         
         return pd
+
+    def fetch_current_date(self, date):
+        db = StockDB()
+        # 1. 调用get_today_data_realtime获取数据
+        stock_data = StockAKShare().get_today_data_realtime(date)  # 注意：应该用self调用，不是akshare
+        
+        if not stock_data.empty:
+            for _, row in stock_data.iterrows():
+                stock_code = row.get('stock_code')
+                # 2. 创建包含所有必要数据的字典
+                realtime_data = {
+                    'open': row.get('open'),
+                    'high': row.get('high'),
+                    'low': row.get('low'),
+                    'close': row.get('close'),
+                    'volume': row.get('volume'),
+                }
+                # 3. 保存到数据库
+                db.save_realtime_daily_date(stock_code, date, realtime_data)
+            print(f"✅ 实时数据获取并保存完成，共处理 {len(stock_data)} 条记录")
 

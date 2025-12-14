@@ -81,6 +81,42 @@ class StockTools:
             print(f"判断交易日失败: {e}")
             return False
     
+    def get_stock_code_with_prefix(self, stock_code: str) -> str:
+        """
+        获取股票代码，添加市场前缀
+        
+        规则：
+        - 6开头：上海证券交易所（沪市）-> 添加前缀 sh
+        - 0或3开头：深圳证券交易所（深市）-> 添加前缀 sz
+        - 4或8开头：北京证券交易所（北交所）-> 添加前缀 bj
+        
+        Args:
+            stock_code: 原始股票代码，如 '000001', '600000', '300001'
+        
+        Returns:
+            带前缀的股票代码，如 'sz000001', 'sh600000', 'sz300001'
+        """
+        if not stock_code or not isinstance(stock_code, str):
+            return stock_code
+        
+        # 去除可能的空格和特殊字符
+        stock_code = stock_code.strip()
+        
+        # 如果已经是带前缀的格式，直接返回
+        if stock_code.startswith(('sh', 'sz', 'bj')):
+            return stock_code
+        
+        # 根据开头数字确定市场
+        if stock_code.startswith('6'):
+            return f'sh{stock_code}'
+        elif stock_code.startswith(('0', '3')):
+            return f'sz{stock_code}'
+        elif stock_code.startswith(('4', '8')):
+            return f'bj{stock_code}'
+        else:
+            # 无法识别的代码，返回原样
+            return stock_code
+
 
 class GridBaseLine:
     def __init__(self, price: float, volume: int):

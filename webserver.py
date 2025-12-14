@@ -51,16 +51,6 @@ async def predict_endpoint(request: PredictRequest):
             if request.predict_len > 7:
                 return {"message": "Invalid predict_len"}
             predict_len = request.predict_len
-        elif request.predict_type == 'min5':
-            end_date = end_date + timedelta(days=-1)
-            start_date = end_date - timedelta(days=10)
-            pd_data = fetcher.get_min_kline(request.stock_code, period='5', start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"))
-            predict_len = 48
-        elif request.predict_type == 'min15':
-            end_date = end_date + timedelta(days=-1)
-            start_date = end_date - timedelta(days=20)
-            pd_data = fetcher.get_min_kline(request.stock_code, period='15', start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"))
-            predict_len = 16
         else:
             return {"message": "Invalid predict_type"}
 
