@@ -8,7 +8,12 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 import sys
+from pick_stock import StockPicker
 from chart_generate import generate_prediction_chart, setup_environment
+
+picker = StockPicker()
+
+select_stocks = []
 
 app = FastAPI(title='Kronos', version='1.0')
 fetcher = StockDataFetcher()
@@ -18,6 +23,17 @@ async def root():
     return {
         "message": "stock API",
         "version": "1.0", 
+    }
+
+@app.get("/pick")
+async def root():
+    """根路径"""
+    return {
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "is_running": picker.is_running,
+        "process": picker.process_count, 
+        "total": picker.total_count,
+        "select_stocks": select_stocks,
     }
 
 class PredictRequest(BaseModel):
@@ -130,6 +146,27 @@ async def predict_endpoint(request: PredictRequest):
     except Exception as e:
         return {"message": f"Prediction failed: {str(e)}"}
 
+def predict_timer():
+    while True:
+        try:
+            # 获取当前时间
+            current_time = datetime.now()
+
+            # 检查当前时间是否为 00:10:00
+            if current_time.hour == 0 and current_time.minute == 10 and current_time.second == 0:
+                picker.prepare_stock()
+
+            # 检查当前时间是否为 14:45:00
+            if current_time.hour == 14 and current_time.minute == 45 and current_time.second == 0:
+                select_stocks = picker.pick_up_stock()
+
+        time.sleep(60)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=6029)
+
+    #启动一个线程来定时处理预测
+    import threading
+    threading.Thread(target=predict_timer).start()
