@@ -370,4 +370,4 @@ if __name__ == "__main__":
     timer_thread.start()
 
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=6029)
+    uvicorn.run(app, host="0.0.0.0", port=6029, access_log=False)
