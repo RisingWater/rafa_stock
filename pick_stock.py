@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 from stock_akshare import StockAKShare
 import time
 import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 class StockPicker:
     def __init__(self):
@@ -58,7 +61,7 @@ class StockPicker:
                 # 输出进度条（\r 覆盖，end='' 不换行）
                 print(f"\r进度: [{bar}] {percent:.1f}% {self.prepare_count}/{self.prepare_total_count} {stock_name}({stock_code})          ", end='', flush=True)
             else:
-                print(f"进度: [{bar}] {percent:.1f}% {self.prepare_count}/{self.prepare_total_count} {stock_name}({stock_code})")
+                logger.info(f"进度: [{bar}] {percent:.1f}% {self.prepare_count}/{self.prepare_total_count} {stock_name}({stock_code})")
 
         self.prepare_running = False
 
@@ -115,9 +118,9 @@ class StockPicker:
             response_data = response.json()
             prediction_data=response_data['prediction']
         except Exception as e:
-            print(f"请求失败: {response}")
-            print(f"请求失败: {len(history_data_for_chart)}")
-            print(f"请求失败: {e}")
+            logger.error(f"请求失败: {response}")
+            logger.error(f"请求失败: {len(history_data_for_chart)}")
+            logger.error(f"请求失败: {e}")
         
         return prediction_data
 
@@ -179,9 +182,9 @@ class StockPicker:
         last_date, current_date, predict_date = self._get_trade_date()
 
         #计算好交易日
-        print(f"上个交易日{last_date}")
-        print(f"当前交易日{current_date}")
-        print(f"预测交易日{predict_date}")
+        logger.info(f"上个交易日{last_date}")
+        logger.info(f"当前交易日{current_date}")
+        logger.info(f"预测交易日{predict_date}")
 
         for _, row in pd_data.iterrows():  
             stock_code = row.get('stock_code')
@@ -204,7 +207,7 @@ class StockPicker:
                 # 输出进度条（\r 覆盖，end='' 不换行）
                 print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})          ", end='', flush=True)
             else:
-                print(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})\r\n")
+                logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})\r\n")
 
             #获取上一个交易日的股票数据与预测数据
             try:
@@ -218,7 +221,7 @@ class StockPicker:
                 if not self._is_right_predict(stock_code, lastdate_p_data, lastdate_data, last_date):
                     continue
             except Exception as e:
-                print(f"获取上一个交易日的股票数据失败: {stock_code} {e}")
+                logger.error(f"获取上一个交易日的股票数据失败: {stock_code} {e}")
                 continue
             
             #获取当前交易日的股票数据与预测数据
@@ -236,7 +239,7 @@ class StockPicker:
                 if not self._is_right_predict(stock_code, curdate_p_data, current_data, current_date):
                     continue
             except Exception as e:
-                print(f"获取当前交易日的股票数据失败: {stock_code} {e}")
+                logger.error(f"获取当前交易日的股票数据失败: {stock_code} {e}")
                 continue
 
             #预测下一个交易日数据，并存储
@@ -255,7 +258,7 @@ class StockPicker:
                     "increase": increase
                 })
             except Exception as e:
-                print(f"预测股票数据失败: {stock_code}")
+                logger.error(f"预测股票数据失败: {stock_code}")
                 continue
 
         #按increase从大到小排序
@@ -276,9 +279,15 @@ class StockPicker:
         return selected_stocks
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
     selected_stocks = StockPicker().pick_up_stock(console_print=True)
     for stock in selected_stocks:
-        print(f"股票代码：{stock['stock_code']}，股票名称：{stock['stock_name']}，涨幅：{stock['increase']}")
+        logger.info(f"股票代码：{stock['stock_code']}，股票名称：{stock['stock_name']}，涨幅：{stock['increase']}")
 
         
 

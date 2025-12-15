@@ -2,6 +2,9 @@ import pandas as pd
 from datetime import datetime, timedelta
 import akshare as ak
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 class StockAKShare:
     def __init__(self):
@@ -55,7 +58,7 @@ class StockAKShare:
             return stock_data
                     
         except Exception as e:
-            print(f"❌ 从东方财经API获取日线数据失败: {e}")
+            logger.error(f"❌ 从东方财经API获取日线数据失败: {e}")
             return pd.DataFrame()
 
     
@@ -118,7 +121,7 @@ class StockAKShare:
             return stock_data
             
         except Exception as e:
-            print(f"❌ 从新浪API获取日线数据失败: {e}")
+            logger.error(f"❌ 从新浪API获取日线数据失败: {e}")
             return pd.DataFrame()
                 
     def get_all_min_kline_from_api(self, stock_code, period='5', adjust='qfq'):
@@ -144,8 +147,6 @@ class StockAKShare:
             else:
                 symbol = f"sz{stock_code}"  # 深圳
             
-            print(f"📡 从新浪API获取 {symbol} {period}分钟线数据...")
-            
             # 获取分钟数据
             stock_data = ak.stock_zh_a_minute(
                 symbol=symbol,
@@ -170,12 +171,10 @@ class StockAKShare:
                 # 按时间排序
                 stock_data = stock_data.sort_values('datetime')
                 
-                print(f"✅ 从新浪API获取{period}分钟线成功: {symbol} - {len(stock_data)} 条")
-                
             return stock_data
             
         except Exception as e:
-            print(f"❌ 从新浪API获取分钟线数据失败: {e}")
+            logger.error(f"❌ 从新浪API获取分钟线数据失败: {e}")
             return pd.DataFrame()
         
     def _get_index_info_from_api(self, symbol, symbol_name):
@@ -194,13 +193,12 @@ class StockAKShare:
                     '交易所英文名称': 'exchange_name_en'
                 })
 
-                print(f"✅ 从中证指数网站获取{symbol_name}({symbol})成分股成功: {len(stock_info)} 条")
                 return stock_info
         
             return pd.DataFrame()
 
         except Exception as e:
-            print(f"❌ 从中证指数网站获取{symbol_name}({symbol})成分股数据失败: {e}")
+            logger.error(f"❌ 从中证指数网站获取{symbol_name}({symbol})成分股数据失败: {e}")
             return pd.DataFrame()
 
     def get_zz1000_stockinfo_from_api(self):

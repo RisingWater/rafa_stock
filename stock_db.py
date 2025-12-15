@@ -3,6 +3,9 @@ import sqlite3
 import pandas as pd
 from datetime import datetime, timedelta
 from stock_tools import StockTools
+import logging
+
+logger = logging.getLogger(__name__)
 
 class StockDB:
     def __init__(self, db_path='stock_data.db'):
@@ -139,7 +142,7 @@ class StockDB:
             conn.close()
             return True
         except Exception as e:
-            print(f"保存数据失败: {e}")
+            logger.error(f"保存数据失败: {e}")
             return False
     
     def save_min_data(self, stock_code, period, kline_data):
@@ -169,10 +172,9 @@ class StockDB:
             
             conn.commit()
             conn.close()
-            print(f"✅ 保存{period}分钟K线数据: {stock_code} - {saved_count} 条")
             return True
         except Exception as e:
-            print(f"❌ 保存{period}分钟K线数据失败: {e}")
+            logger.error(f"❌ 保存{period}分钟K线数据失败: {e}")
             return False
 
     def get_daily_data(self, stock_code, start_date, end_date):
@@ -199,7 +201,7 @@ class StockDB:
         """
         valid_periods = ['1', '5', '15', '30', '60']
         if period not in valid_periods:
-            print(f"❌ 不支持的周期: {period}")
+            logger.error(f"❌ 不支持的周期: {period}")
             return pd.DataFrame()
 
         try:
@@ -220,7 +222,7 @@ class StockDB:
             return df
             
         except Exception as e:
-            print(f"❌ 获取{period}分钟K线数据失败: {e}")
+            logger.error(f"❌ 获取{period}分钟K线数据失败: {e}")
             return pd.DataFrame()
         
     def get_latest_daily_date(self, stock_code):
@@ -274,10 +276,9 @@ class StockDB:
             
             conn.commit()
             conn.close()
-            print(f"✅ 保存股票数据成功:{saved_count} 条")
             return True
         except Exception as e:
-            print(f"❌ 保存保存股票数据失败: {e}")
+            logger.error(f"❌ 保存保存股票数据失败: {e}")
             return False
 
     def get_stock_info(self):
@@ -311,7 +312,7 @@ class StockDB:
             conn.close()
             return True
         except Exception as e:
-            print(f"❌ 保存股票预测数据失败: {e}")
+            logger.error(f"❌ 保存股票预测数据失败: {e}")
             return False
         
     def get_predict_daily_data(self, stock_code, predict_date):
@@ -329,7 +330,6 @@ class StockDB:
             return pd.DataFrame() 
 
     def save_realtime_daily_date_batch(self, stock_data, date):
-        """Level 1: 基础优化 - 使用事务和executemany"""
         import time
         start_time = time.time()
         
@@ -360,13 +360,11 @@ class StockDB:
             conn.close()
             
             elapsed = time.time() - start_time
-            print(f"✅ Level1 完成 {len(data_tuples)} 条, 耗时: {elapsed:.1f}秒, "
-                f"速度: {len(data_tuples)/elapsed:.1f} 条/秒")
             return True
             
         except Exception as e:
             elapsed = time.time() - start_time
-            print(f"❌ Level1 失败 (已运行 {elapsed:.1f}秒): {e}")
+            logger.error(f"❌  保存股票实时数据失败: {e}")
             return False
 
     def save_realtime_daily_date(self, stock_code, realtime_date, realtime_data):
@@ -385,10 +383,9 @@ class StockDB:
 
             conn.commit()
             conn.close()
-            print(f"✅ 保存股票实时数据成功:{stock_code} {realtime_date}")
             return True
         except Exception as e:
-            print(f"❌ 保存股票实时数据失败: {e}")
+            logger.error(f"❌ 保存股票实时数据失败: {e}")
             return False
 
     def get_realtime_daily_data(self, stock_code, realtime_date):

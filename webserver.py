@@ -13,6 +13,9 @@ import time
 import threading
 import concurrent.futures
 from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 # 导入你的模块
 from pick_stock import StockPicker
@@ -85,7 +88,7 @@ async def start_prepare():
             await loop.run_in_executor(executor, picker.prepare_stock)
             return True
         except Exception as e:
-            print(f"准备任务执行出错: {e}")
+            logger.error(f"准备任务执行出错: {e}")
             return False
         finally:
             is_prepare_task_running = False
@@ -165,7 +168,7 @@ async def start_pick():
             select_stocks = stocks if stocks else []
             return True
         except Exception as e:
-            print(f"选股任务执行出错: {e}")
+            logger.error(f"选股任务执行出错: {e}")
             select_stocks = []
             return False
         finally:
@@ -239,8 +242,7 @@ async def predict_endpoint(request: PredictRequest):
     """预测接口"""
     try:
         end_date = datetime.strptime(request.predict_date, "%Y-%m-%d")
-        print(request)
-
+        
         if request.predict_type == 'daily':
             end_date = end_date + timedelta(days=-1)
             start_date = end_date - timedelta(days=365)
@@ -254,9 +256,7 @@ async def predict_endpoint(request: PredictRequest):
         # 检查是否获取到数据
         if pd_data is None or len(pd_data) == 0:
             return {"message": "No data available for prediction"}
-        
-        print(f"{pd_data}")
-        
+                
         # 转换历史数据为图表需要的格式
         history_data_for_chart = []
         for _, row in pd_data.iterrows():
@@ -336,26 +336,26 @@ def predict_timer():
             
             # 00:10:00 执行准备任务
             if current_time.hour == 0 and current_time.minute == 10 and current_time.second == 0:
-                print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - 开始执行准备任务")
+                logger.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - 开始执行准备任务")
                 try:
                     picker.prepare_stock()
                 except Exception as e:
-                    print(f"定时准备任务执行出错: {e}")
+                    logger.error(f"定时准备任务执行出错: {e}")
             
             # 14:45:00 执行选股任务
             if current_time.hour == 14 and current_time.minute == 45 and current_time.second == 0:
-                print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - 开始执行选股任务")
+                logger.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - 开始执行选股任务")
                 try:
                     global select_stocks
                     stocks = picker.pick_up_stock()
                     select_stocks = stocks if stocks else []
-                    print(f"选股完成，选出 {len(select_stocks)} 只股票")
+                    logger.info(f"选股完成，选出 {len(select_stocks)} 只股票")
                 except Exception as e:
-                    print(f"定时选股任务执行出错: {e}")
+                    logger.error(f"定时选股任务执行出错: {e}")
                     select_stocks = []
         
         except Exception as e:
-            print(f"定时任务调度出错: {e}")
+            logger.error(f"定时任务调度出错: {e}")
         
         time.sleep(1)  # 每秒检查一次，提高精度
 

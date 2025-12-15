@@ -4,6 +4,9 @@ import matplotlib.dates as mdates
 from stock_tools import StockTools
 from stock_akshare import StockAKShare
 from stock_db import StockDB
+import logging
+
+logger = logging.getLogger(__name__)
 
 class StockDataFetcher:
     """
@@ -58,11 +61,11 @@ class StockDataFetcher:
 
                     return update_data
                 else:
-                    print("⚠️ 未获取到API数据")
+                    logger.error("⚠️ 未获取到API数据")
                     return pd.DataFrame()
                     
         except Exception as e:
-            print(f"❌ 获取daily数据失败: {e}")
+            logger.error(f"❌ 获取daily数据失败: {e}")
             return pd.DataFrame()
             
     def get_min_kline(self, stock_code, period='5', start_date=None, end_date=None, realtime=False, adjust=''):
@@ -114,13 +117,11 @@ class StockDataFetcher:
                 return db_data
             else:
                 # 数据库数据不够新，从API获取最新数据
-                print(f"🔄 数据库数据不够新，从API获取最新{period}分钟数据")
                 api_data = StockAKShare().get_all_min_kline_from_api(stock_code, period=period, adjust=adjust)
                 
                 if not api_data.empty:
                     # 保存到数据库
                     db.save_min_data(stock_code, period, api_data)
-                    print(f"💾 已保存{period}分钟数据到数据库: {len(api_data)} 条")
                     
                     # 从完整数据中提取请求的时间范围
                     filtered_data = api_data[
@@ -132,7 +133,7 @@ class StockDataFetcher:
                 return pd.DataFrame()
                 
         except Exception as e:
-            print(f"❌ 获取{period}分钟K线数据失败: {e}")
+            logger.error(f"❌ 获取{period}分钟K线数据失败: {e}")
             return pd.DataFrame()
 
     def get_daily_end_price(self, stock_code: str, current_datetime: datetime) -> float:
@@ -142,13 +143,13 @@ class StockDataFetcher:
             db_data = db.get_daily_data(stock_code, current_datetime.strftime("%Y-%m-%d"), current_datetime.strftime("%Y-%m-%d"))
 
             if db_data.empty:
-                print(f"没有数据")
+                logger.error(f"没有数据")
                 return None
             
             return float(db_data['close'].iloc[0])
         
         except Exception as e:
-            print(f"❌ 获取价格失败: {e}")
+            logger.error(f"❌ 获取价格失败: {e}")
             return None
 
     def get_daily_start_price(self, stock_code: str, current_datetime: datetime) -> float:
@@ -158,13 +159,13 @@ class StockDataFetcher:
             db_data = db.get_daily_data(stock_code, current_datetime.strftime("%Y-%m-%d"), current_datetime.strftime("%Y-%m-%d"))
 
             if db_data.empty:
-                print(f"没有数据")
+                logger.error(f"没有数据")
                 return None
             
             return float(db_data['open'].iloc[0])
         
         except Exception as e:
-            print(f"❌ 获取价格失败: {e}")
+            logger.error(f"❌ 获取价格失败: {e}")
             return False
             
     def get_price(self, stock_code: str, period: str, current_datetime: datetime) -> float:
@@ -183,7 +184,7 @@ class StockDataFetcher:
             latest_min_datetime = db.get_latest_min_datetime(stock_code, period)
             
             if latest_min_datetime is None:
-                print(f"{stock_code} 没有数据")
+                logger.error(f"{stock_code} 没有数据")
                 return None
             
             # 如果latest_min_datetime是字符串，也转换为datetime
@@ -194,7 +195,7 @@ class StockDataFetcher:
             
             # 现在用datetime对象比较
             if latest_dt < current_dt:
-                print(f"{stock_code} 的最新5分钟数据已经更新，请勿重复获取")
+                logger.error(f"{stock_code} 的最新5分钟数据已经更新，请勿重复获取")
                 return None
             
             # 获取数据时使用字符串格式
@@ -202,13 +203,13 @@ class StockDataFetcher:
             db_data = db.get_min_data(stock_code, period, current_datetime_str, current_datetime_str)
 
             if db_data.empty:
-                print(f"{current_datetime_str}没有数据")
+                logger.error(f"{current_datetime_str}没有数据")
                 return None
             
             return float(db_data['open'].iloc[0])
         
         except Exception as e:
-            print(f"❌ 获取价格失败: {e}")
+            logger.error(f"❌ 获取价格失败: {e}")
             return False
 
     def is_trade_success(self, stock_code: str, period: str, price: float, quantity: int, action: str, current_datetime: str) -> bool:
@@ -251,7 +252,7 @@ class StockDataFetcher:
             return low <= price <= high
             
         except Exception as e:
-            print(f"❌ 获取判断交易成功与否失败: {e}")
+            logger.error(f"❌ 获取判断交易成功与否失败: {e}")
             return False
     
     def get_all_stock_info(self):
@@ -272,7 +273,7 @@ class StockDataFetcher:
             pd = db.get_stock_info()
 
             if pd.empty:
-                print("❌ 获取股票信息失败")
+                logger.error("❌ 获取股票信息失败")
         
         return pd
 

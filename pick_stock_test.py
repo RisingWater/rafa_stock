@@ -6,6 +6,10 @@ from datetime import datetime, timedelta
 import time
 import requests
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 fetcher = StockDataFetcher()
 db = StockDB()
 def prepare_stock(stock_code, start_date, end_date):
@@ -74,7 +78,7 @@ def predict_all_stock_price():
         stock_code = row.get('stock_code')
         stock_name = row.get('stock_name')
         if stock_code:
-            print(f"开始处理 {stock_name}({stock_code})")
+            logger.info(f"开始处理 {stock_name}({stock_code})")
             prepare_stock(stock_code, start_date=start_date, end_date=end_date)
 
             for i in range(0, 100):
@@ -138,6 +142,12 @@ def is_right_predict(date):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
     success = 0
     total = 0
     total_money = 100000
@@ -178,14 +188,14 @@ if __name__ == "__main__":
                         if increase_rate > 0.02:
                             #以上涨2%的价格卖出
                             total_money = prev_close * 1.02 * volume + cash
-                            print(f"股票: {stock_code} {stock_name} {p_date}上涨预测ok, 前一日尾盘{prev_close}买入，以2%涨幅{prev_close * 1.02}卖出")
+                            logger.info(f"股票: {stock_code} {stock_name} {p_date}上涨预测ok, 前一日尾盘{prev_close}买入，以2%涨幅{prev_close * 1.02}卖出")
                             success = success + 1
                         else:
                             #以收盘价卖出
                             total_money = actual_close * volume + cash
-                            print(f"股票: {stock_code} {stock_name} {p_date}上涨预测failed, 前一日尾盘{prev_close}买入，以{actual_close}卖出，实际{increase_rate:.2f}%")
+                            logger.info(f"股票: {stock_code} {stock_name} {p_date}上涨预测failed, 前一日尾盘{prev_close}买入，以{actual_close}卖出，实际{increase_rate:.2f}%")
 
-                        print(f"账户余额: {total_money:.2f}")
+                        logger.info(f"账户余额: {total_money:.2f}")
 
                     right_days = 0
 
@@ -196,8 +206,8 @@ if __name__ == "__main__":
                 else:
                     right_days = 0
 
-    print(f"预测完成，共{total}个交易日，其中{success}个交易日预测正确, 胜率为{success/total:.2%}")
-    print(f"本金100000，尾盘选股后，余额{total_money:.2f},利润率{total_money/100000:.2%}")
+    logger.info(f"预测完成，共{total}个交易日，其中{success}个交易日预测正确, 胜率为{success/total:.2%}")
+    logger.info(f"本金100000，尾盘选股后，余额{total_money:.2f},利润率{total_money/100000:.2%}")
                 
                 
 

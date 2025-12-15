@@ -7,6 +7,10 @@ from matplotlib.patches import Rectangle
 from io import BytesIO
 import numpy as np
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def setup_environment():
     """
     设置跨平台环境，包括字体和后端
@@ -18,15 +22,15 @@ def setup_environment():
     if sys.platform.startswith('win'):
         # Windows系统
         matplotlib.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'SimSun', 'FangSong', 'KaiTi']
-        print("已设置Windows中文字体")
+        logger.info("已设置Windows中文字体")
     elif sys.platform.startswith('linux'):
         # Linux系统
         matplotlib.rcParams['font.sans-serif'] = ['WenQuanYi Micro Hei', 'WenQuanYi Zen Hei', 'DejaVu Sans']
-        print("已设置Linux中文字体")
+        logger.info("已设置Linux中文字体")
     else:
         # macOS或其他系统
         matplotlib.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei']
-        print("已设置默认字体")
+        logger.info("已设置默认字体")
     
     # 解决负号显示问题
     matplotlib.rcParams['axes.unicode_minus'] = False
@@ -365,13 +369,19 @@ def create_sample_data():
 
 # 使用示例
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
     # 生成示例数据（历史3天，预测1天）
     history_df, prediction_df = create_sample_data()
     
-    print("历史数据（3天）：")
-    print(history_df)
-    print("\n预测数据（1天）：")
-    print(prediction_df)
+    logger.info("历史数据（3天）：")
+    logger.info(history_df)
+    logger.info("\n预测数据（1天）：")
+    logger.info(prediction_df)
     
     # 生成图表
     chart_buffer = generate_prediction_chart(
@@ -385,10 +395,10 @@ if __name__ == "__main__":
     with open('prediction_chart_3d1p.png', 'wb') as f:
         f.write(chart_buffer.getvalue())
     
-    print("\n图表已保存为 prediction_chart_3d1p.png")
+    logger.info("\n图表已保存为 prediction_chart_3d1p.png")
     
     # 输出价格信息
-    print(f"\n历史最后收盘价: {history_df['close'].iloc[-1]:.2f}")
-    print(f"预测开盘价: {prediction_df['open'].iloc[0]:.2f}")
-    print(f"预测收盘价: {prediction_df['close'].iloc[0]:.2f}")
-    print(f"预测涨跌幅: {((prediction_df['close'].iloc[0] - history_df['close'].iloc[-1]) / history_df['close'].iloc[-1] * 100):.2f}%")
+    logger.info(f"\n历史最后收盘价: {history_df['close'].iloc[-1]:.2f}")
+    logger.info(f"预测开盘价: {prediction_df['open'].iloc[0]:.2f}")
+    logger.info(f"预测收盘价: {prediction_df['close'].iloc[0]:.2f}")
+    logger.info(f"预测涨跌幅: {((prediction_df['close'].iloc[0] - history_df['close'].iloc[-1]) / history_df['close'].iloc[-1] * 100):.2f}%")

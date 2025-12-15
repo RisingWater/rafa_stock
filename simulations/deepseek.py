@@ -4,10 +4,11 @@ import json
 import logging
 import os
 from dotenv import load_dotenv
-
-load_dotenv()
+import logging
 
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 class DeepSeekAPI:
     def __init__(self):
@@ -56,7 +57,7 @@ class DeepSeekAPI:
             if response.status_code == 200:
                 result = response.json()
                 self.token_cost = result["usage"]["total_tokens"]
-                print(f"消耗token数: {result['usage']['total_tokens']}")
+                logger.info(f"消耗token数: {result['usage']['total_tokens']}")
                 content = result["choices"][0]["message"]["content"]
                 logger.info("DeepSeek API request successful")
                 return content

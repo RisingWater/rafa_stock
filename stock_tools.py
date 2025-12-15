@@ -1,6 +1,9 @@
 # stock_tools.py
 import chinese_calendar as calendar
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 class StockTools:
     def __init__(self):
@@ -58,11 +61,11 @@ class StockTools:
             
             # 如果循环结束还没找到
             direction = "未来" if delta > 0 else "过去"
-            print(f"警告: 在{max_days}天内未找到{direction}的第{target_count}个交易日")
+            logger.error(f"警告: 在{max_days}天内未找到{direction}的第{target_count}个交易日")
             return None
             
         except Exception as e:
-            print(f"获取下第{delta}个交易日失败: {e}")
+            logger.error(f"获取下第{delta}个交易日失败: {e}")
             return None
     
     def is_trading_day(self, date):
@@ -78,7 +81,7 @@ class StockTools:
             return calendar.is_workday(date_obj) and date_obj.weekday() < 5
             
         except Exception as e:
-            print(f"判断交易日失败: {e}")
+            logger.error(f"判断交易日失败: {e}")
             return False
     
     def get_stock_code_with_prefix(self, stock_code: str) -> str:
