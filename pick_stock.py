@@ -89,7 +89,7 @@ class StockPicker:
             # 可视化进度条（长度为20）
             bar_length = 20
             filled_length = int(bar_length * self.prepare_count / self.prepare_total_count)
-            bar = '█' * filled_length + '-' * (bar_length - filled_length)
+            bar = '#' * filled_length + '-' * (bar_length - filled_length)
             if console_print:
                 # 输出进度条（\r 覆盖，end='' 不换行）
                 print(f"\r进度: [{bar}] {percent:.1f}% {self.prepare_count}/{self.prepare_total_count} {stock_name}({stock_code})          ", end='', flush=True)
@@ -234,7 +234,7 @@ class StockPicker:
             # 可视化进度条（长度为20）
             bar_length = 20
             filled_length = int(bar_length * self.process_count / self.total_count)
-            bar = '█' * filled_length + '-' * (bar_length - filled_length)
+            bar = '#' * filled_length + '-' * (bar_length - filled_length)
 
             if console_print:
                 # 输出进度条（\r 覆盖，end='' 不换行）
