@@ -35,7 +35,27 @@ class StockPicker:
         self.prepare_running = True
         self.interrupt_prepare = False
         pd_data = self._fetcher.get_all_stock_info()
-        last_date, current_date, predict_date = self._get_trade_date()
+
+        now = datetime.now()
+
+        if self._tools.is_trading_day(now):
+            #如果当前是交易日
+            if now.hour <= 15:
+                #收盘前，都是获取上一个交易日的k线数据
+                current_date = self._tools.get_trading_day(now, -1)
+                #预测是今天的k线数据
+                predict_date = self._tools.get_trading_day(now, 0)
+            else:
+                #收盘后，就可以获取今天的k线数据
+                current_date = self._tools.get_trading_day(now, 0)
+                #预测是明天的k线数据
+                predict_date = self._tools.get_trading_day(now, 1)
+        else:
+            # 如果当前不是交易日
+            # 获取到上一个交易日的股票k线数据
+            current_date = self._tools.get_trading_day(now, -1)
+            # 预测下一个交易日的k线数据
+            predict_date = self._tools.get_trading_day(current_date, delta=1)
     
         self.prepare_count = 0
         self.prepare_total_count = len(pd_data)
@@ -44,6 +64,7 @@ class StockPicker:
             stock_code = row.get('stock_code')
             stock_name = row.get('stock_name')
             self._fetcher.get_daily_kline(stock_code, last_date, last_date, sleep_time=2)
+            self._predict_stock(stock_code, predict_date)
 
             self.prepare_count = self.prepare_count + 1
 
