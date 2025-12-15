@@ -302,12 +302,12 @@
         }
         
         .positive {
-            color: #07c160;
+            color: #fa5151;
             font-weight: 600;
         }
         
         .negative {
-            color: #fa5151;
+            color: #07c160;
             font-weight: 600;
         }
         
@@ -821,12 +821,13 @@
                 // 根据涨幅设置颜色
                 var increase = parseFloat(stock.increase) || 0;
                 var increaseText
+                var increaseClass 
                 if (increase >= 2.0) {
-                    row.classList.add('negative');
+                    increaseClass = 'positive';
                     increaseText = `已选中 +${increase.toFixed(2)}%`
                     ok_count++
                 } else {
-                    row.classList.add('positive');
+                    increaseClass = 'negative';
                     if (increase < 0)
                     {
                         increaseText = `未选中 ${increase.toFixed(2)}%`
