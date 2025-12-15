@@ -309,7 +309,6 @@ class StockDB:
 
             conn.commit()
             conn.close()
-            print(f"✅ 保存股票预测数据成功:{stock_code} {predict_date}")
             return True
         except Exception as e:
             print(f"❌ 保存股票预测数据失败: {e}")
