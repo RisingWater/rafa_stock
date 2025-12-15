@@ -63,8 +63,12 @@ class StockPicker:
         for _, row in pd_data.iterrows():  
             stock_code = row.get('stock_code')
             stock_name = row.get('stock_name')
-            self._fetcher.get_daily_kline(stock_code, last_date, last_date, sleep_time=2)
-            self._predict_stock(stock_code, predict_date)
+            self._fetcher.get_daily_kline(stock_code, current_date, current_date, sleep_time=2)
+
+            p_data = self._db.get_predict_daily_data(stock_code, predict_date)
+            if p_data.empty:
+                tmp = self._predict_stock(stock_code, predict_date)
+                self._db.save_predict_daily_data(stock_code, predict_date, tmp[0])
 
             self.prepare_count = self.prepare_count + 1
 
