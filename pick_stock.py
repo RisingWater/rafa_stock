@@ -87,7 +87,7 @@ class StockPicker:
             # 计算百分比
             percent = (self.prepare_count / self.prepare_total_count) * 100
             # 可视化进度条（长度为20）
-            bar_length = 40
+            bar_length = 20
             filled_length = int(bar_length * self.prepare_count / self.prepare_total_count)
             bar = '█' * filled_length + '-' * (bar_length - filled_length)
             if console_print:
@@ -232,7 +232,7 @@ class StockPicker:
             # 计算百分比
             percent = (self.process_count / self.total_count) * 100
             # 可视化进度条（长度为20）
-            bar_length = 40
+            bar_length = 20
             filled_length = int(bar_length * self.process_count / self.total_count)
             bar = '█' * filled_length + '-' * (bar_length - filled_length)
 
