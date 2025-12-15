@@ -22,7 +22,7 @@ class StockPicker:
         self.interrupt_prepare = False
         self.interrupt_pick = False
 
-    def prepare_stock(self):
+    def prepare_stock(self, console_print=False):
         """
             准备股票数据
             每日0点之后执行，提前准备日k线数据
@@ -54,8 +54,11 @@ class StockPicker:
             bar_length = 40
             filled_length = int(bar_length * self.prepare_count / self.prepare_total_count)
             bar = '█' * filled_length + '-' * (bar_length - filled_length)
-            # 输出进度条（\r 覆盖，end='' 不换行）
-            print(f"\r进度: [{bar}] {percent:.1f}% {self.prepare_count}/{self.prepare_total_count} {stock_name}({stock_code})          ", end='', flush=True)
+            if console_print:
+                # 输出进度条（\r 覆盖，end='' 不换行）
+                print(f"\r进度: [{bar}] {percent:.1f}% {self.prepare_count}/{self.prepare_total_count} {stock_name}({stock_code})          ", end='', flush=True)
+            else:
+                print(f"进度: [{bar}] {percent:.1f}% {self.prepare_count}/{self.prepare_total_count} {stock_name}({stock_code})")
 
         self.prepare_running = False
 
@@ -160,7 +163,7 @@ class StockPicker:
         except Exception as e:
             return False
 
-    def pick_up_stock(self):
+    def pick_up_stock(self, console_print=False):
         self.is_running = True
         self.interrupt_pick = False
 
@@ -194,8 +197,12 @@ class StockPicker:
             bar_length = 40
             filled_length = int(bar_length * self.process_count / self.total_count)
             bar = '█' * filled_length + '-' * (bar_length - filled_length)
-            # 输出进度条（\r 覆盖，end='' 不换行）
-            print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})          ", end='', flush=True)
+
+            if console_print:
+                # 输出进度条（\r 覆盖，end='' 不换行）
+                print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})          ", end='', flush=True)
+            else:
+                print(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})\r\n")
 
             #获取上一个交易日的股票数据与预测数据
             try:
@@ -270,7 +277,7 @@ class StockPicker:
         return selected_stocks
 
 if __name__ == '__main__':
-    selected_stocks = StockPicker().pick_up_stock()
+    selected_stocks = StockPicker().pick_up_stock(console_print=True)
     for stock in selected_stocks:
         print(f"股票代码：{stock['stock_code']}，股票名称：{stock['stock_name']}，涨幅：{stock['increase']}")
 
