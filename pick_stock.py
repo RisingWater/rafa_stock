@@ -174,12 +174,12 @@ class StockPicker:
 
         pd_data = self._fetcher.get_all_stock_info()
 
-        self._fetcher.fetch_current_date()
-
         self.process_count = 0
         self.total_count = len(pd_data)
 
         last_date, current_date, predict_date = self._get_trade_date()
+
+        self._fetcher.fetch_current_date(current_date)
 
         #计算好交易日
         logger.info(f"上个交易日{last_date}")
