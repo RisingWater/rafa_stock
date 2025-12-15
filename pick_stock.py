@@ -207,7 +207,7 @@ class StockPicker:
                 # 输出进度条（\r 覆盖，end='' 不换行）
                 print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})          ", end='', flush=True)
             else:
-                logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})\r\n")
+                logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})")
 
             #获取上一个交易日的股票数据与预测数据
             try:

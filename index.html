@@ -798,8 +798,7 @@
             const emptyState = document.getElementById('empty-state');
             const stockCount = document.getElementById('stock-count');
             
-            // 更新股票数量
-            stockCount.textContent = `${stocks.length} 只`;
+            ok_count = 0
             
             // 如果没有股票数据
             if (stocks.length === 0) {
@@ -820,9 +819,23 @@
                 row.className = 'stock-row';
                 
                 // 根据涨幅设置颜色
-                const increase = parseFloat(stock.increase) || 0;
-                const increaseClass = increase >= 0 ? 'positive' : 'negative';
-                const increaseText = increase >= 0 ? `+${increase.toFixed(2)}%` : `${increase.toFixed(2)}%`;
+                var increase = parseFloat(stock.increase) || 0;
+                var increaseText
+                if (increase >= 2.0) {
+                    row.classList.add('negative');
+                    increaseText = `已选中 +${increase.toFixed(2)}%`
+                    ok_count++
+                } else {
+                    row.classList.add('positive');
+                    if (increase < 0)
+                    {
+                        increaseText = `未选中 ${increase.toFixed(2)}%`
+                    }
+                    else
+                    {
+                        increaseText = `未选中 +${increase.toFixed(2)}%`
+                    }
+                }
                 
                 row.innerHTML = `
                     <td class="stock-code">${stock.stock_code || '--'}</td>
@@ -837,6 +850,9 @@
                 
                 tableBody.appendChild(row);
             });
+
+            // 更新股票数量
+            stockCount.textContent = `${ok_count} 只`;
             
             // 如果股票卡片是展开状态，确保表格区域也展开
             if (cardState['stocks-card']) {
