@@ -19,6 +19,8 @@ class StockPicker:
         self.prepare_running = False
         self.prepare_count = 0
         self.prepare_total_count = 0
+        self.interrupt_prepare = False
+        self.interrupt_pick = False
 
     def prepare_stock(self):
         """
@@ -28,6 +30,7 @@ class StockPicker:
             1800只股票准备一次数据大约1-2小时
         """ 
         self.prepare_running = True
+        self.interrupt_prepare = False
         pd_data = self._fetcher.get_all_stock_info()
         last_date, current_date, predict_date = self._get_trade_date()
     
@@ -40,6 +43,10 @@ class StockPicker:
             self._fetcher.get_daily_kline(stock_code, last_date, last_date, sleep_time=2)
 
             self.prepare_count = self.prepare_count + 1
+
+            if self.interrupt_prepare:
+                self.interrupt_prepare = False
+                break
 
             # 计算百分比
             percent = (self.prepare_count / self.prepare_total_count) * 100
@@ -155,6 +162,7 @@ class StockPicker:
 
     def pick_up_stock(self):
         self.is_running = True
+        self.interrupt_pick = False
 
         pick_up_stocks = []
 
@@ -175,6 +183,10 @@ class StockPicker:
             stock_name = row.get('stock_name')
 
             self.process_count = self.process_count + 1
+
+            if self.interrupt_pick:
+                self.interrupt_pick = False
+                break
 
             # 计算百分比
             percent = (self.process_count / self.total_count) * 100

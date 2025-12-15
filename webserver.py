@@ -1,4 +1,5 @@
 import os
+import asyncio
 import matplotlib
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, FileResponse
@@ -9,39 +10,211 @@ import pandas as pd
 import requests
 import sys
 import time
+import threading
+import concurrent.futures
+from typing import Optional
+
+# 导入你的模块
 from pick_stock import StockPicker
 from chart_generate import generate_prediction_chart, setup_environment
 
+# 初始化
 picker = StockPicker()
-
 select_stocks = []
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)  # 用于执行同步阻塞任务
 
 app = FastAPI(title='Kronos', version='1.0')
-fetcher = StockDataFetcher()
+
+# 全局状态
+is_prepare_task_running = False
+is_pick_task_running = False
+prepare_task_future = None
+pick_task_future = None
+
 @app.get("/")
-async def root():
+async def get_root():
     """根路径"""
     return FileResponse("index.html")
 
 @app.get("/pick")
-async def root():
-    """根路径"""
+async def get_pick():
+    """获取pick任务状态"""
     return {
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "is_running": picker.is_running,
-        "process": picker.process_count, 
+        "process": picker.process_count,
         "total": picker.total_count,
         "select_stocks": select_stocks,
     }
 
 @app.get("/prepare")
-async def root():
-    """根路径"""
+async def get_prepare():
+    """获取prepare任务状态"""
     return {
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "is_running": picker.prepare_running,
         "process": picker.prepare_count, 
         "total": picker.prepare_total_count,
+    }
+
+@app.post("/start_prepare")
+async def start_prepare():
+    """异步启动prepare任务"""
+    global is_prepare_task_running, prepare_task_future
+    
+    # 检查是否已经在运行
+    if is_prepare_task_running:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "message": "准备任务已在运行中",
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "success": False
+            }
+        )
+    
+    # 标记为运行中
+    is_prepare_task_running = True
+    
+    # 定义异步任务包装器
+    async def run_prepare():
+        global is_prepare_task_running
+        try:
+            # 如果picker.prepare_stock()是同步方法，使用线程池执行
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(executor, picker.prepare_stock)
+            return True
+        except Exception as e:
+            print(f"准备任务执行出错: {e}")
+            return False
+        finally:
+            is_prepare_task_running = False
+    
+    # 启动异步任务（不等待）
+    prepare_task_future = asyncio.create_task(run_prepare())
+    
+    return {
+        "message": "股票数据准备任务已启动",
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "success": True,
+        "is_running": True
+    }
+
+@app.post("/stop_prepare")
+async def stop_prepare():
+    """停止prepare任务"""
+    global is_prepare_task_running, prepare_task_future
+    
+    if not is_prepare_task_running:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "message": "没有运行中的准备任务",
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "success": False
+            }
+        )
+    
+    # 尝试停止任务
+    if picker:
+        picker.interrupt_prepare = True
+    
+    # 尝试取消异步任务
+    if prepare_task_future and not prepare_task_future.done():
+        prepare_task_future.cancel()
+        try:
+            await prepare_task_future
+        except asyncio.CancelledError:
+            pass
+    
+    is_prepare_task_running = False
+    
+    return {
+        "message": "准备任务已停止",
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "success": True,
+        "is_running": False
+    }
+
+@app.post("/start_pick")
+async def start_pick():
+    """异步启动pick任务"""
+    global is_pick_task_running, select_stocks, pick_task_future
+    
+    # 检查是否已经在运行
+    if is_pick_task_running:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "message": "选股任务已在运行中",
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "success": False
+            }
+        )
+    
+    # 标记为运行中
+    is_pick_task_running = True
+    
+    # 定义异步任务包装器
+    async def run_pick():
+        global is_pick_task_running, select_stocks
+        try:
+            # 如果picker.pick_up_stock()是同步方法，使用线程池执行
+            loop = asyncio.get_event_loop()
+            stocks = await loop.run_in_executor(executor, picker.pick_up_stock)
+            select_stocks = stocks if stocks else []
+            return True
+        except Exception as e:
+            print(f"选股任务执行出错: {e}")
+            select_stocks = []
+            return False
+        finally:
+            is_pick_task_running = False
+    
+    # 启动异步任务（不等待）
+    pick_task_future = asyncio.create_task(run_pick())
+    
+    return {
+        "message": "选股任务已启动",
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "success": True,
+        "is_running": True
+    }
+
+@app.post("/stop_pick")
+async def stop_pick():
+    """停止pick任务"""
+    global is_pick_task_running, pick_task_future
+    
+    if not is_pick_task_running:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "message": "没有运行中的选股任务",
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "success": False
+            }
+        )
+    
+    # 尝试停止任务
+    if picker:
+        picker.interrupt_pick = True
+    
+    # 尝试取消异步任务
+    if pick_task_future and not pick_task_future.done():
+        pick_task_future.cancel()
+        try:
+            await pick_task_future
+        except asyncio.CancelledError:
+            pass
+    
+    is_pick_task_running = False
+    
+    return {
+        "message": "选股任务已停止",
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "success": True,
+        "is_running": False
     }
 
 class PredictRequest(BaseModel):
@@ -154,29 +327,41 @@ async def predict_endpoint(request: PredictRequest):
     except Exception as e:
         return {"message": f"Prediction failed: {str(e)}"}
 
+
 def predict_timer():
+    """定时任务执行器"""
     while True:
         try:
-            # 获取当前时间
             current_time = datetime.now()
-
-            # 检查当前时间是否为 00:10:00
+            
+            # 00:10:00 执行准备任务
             if current_time.hour == 0 and current_time.minute == 10 and current_time.second == 0:
-                picker.prepare_stock()
-
-            # 检查当前时间是否为 14:45:00
+                print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - 开始执行准备任务")
+                try:
+                    picker.prepare_stock()
+                except Exception as e:
+                    print(f"定时准备任务执行出错: {e}")
+            
+            # 14:45:00 执行选股任务
             if current_time.hour == 14 and current_time.minute == 45 and current_time.second == 0:
-                select_stocks = picker.pick_up_stock()
+                print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - 开始执行选股任务")
+                try:
+                    global select_stocks
+                    stocks = picker.pick_up_stock()
+                    select_stocks = stocks if stocks else []
+                    print(f"选股完成，选出 {len(select_stocks)} 只股票")
+                except Exception as e:
+                    print(f"定时选股任务执行出错: {e}")
+                    select_stocks = []
+        
         except Exception as e:
-            print(e)
-
-        time.sleep(60)
-
+            print(f"定时任务调度出错: {e}")
+        
+        time.sleep(1)  # 每秒检查一次，提高精度
 
 if __name__ == "__main__":
+    timer_thread = threading.Thread(target=predict_timer, daemon=True)
+    timer_thread.start()
+
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=6029)
-
-    #启动一个线程来定时处理预测
-    import threading
-    threading.Thread(target=predict_timer).start()

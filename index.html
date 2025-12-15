@@ -121,6 +121,50 @@
             max-height: 500px;
         }
         
+        /* 控制按钮区域 */
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .control-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .btn-stop {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+        
         /* 进度条样式 */
         .progress-container {
             margin: 15px 0;
@@ -152,8 +196,6 @@
             justify-content: space-between;
             font-size: 0.85rem;
             margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #f0f0f0;
         }
         
         .info-item {
@@ -382,6 +424,15 @@
                         <span class="info-value" id="pick-time">--</span>
                     </div>
                 </div>
+                <!-- 控制按钮 -->
+                <div class="control-buttons">
+                    <button class="control-btn btn-start" onclick="startPickTask()" id="start-pick-btn">
+                        <i class="bi bi-play-circle"></i> 启动
+                    </button>
+                    <button class="control-btn btn-stop" onclick="stopPickTask()" id="stop-pick-btn" disabled>
+                        <i class="bi bi-stop-circle"></i> 停止
+                    </button>
+                </div>
             </div>
         </div>
         
@@ -414,6 +465,15 @@
                         <span class="info-label">更新时间</span>
                         <span class="info-value" id="prepare-time">--</span>
                     </div>
+                </div>
+                <!-- 控制按钮 -->
+                <div class="control-buttons">
+                    <button class="control-btn btn-start" onclick="startPrepareTask()" id="start-prepare-btn">
+                        <i class="bi bi-play-circle"></i> 启动
+                    </button>
+                    <button class="control-btn btn-stop" onclick="stopPrepareTask()" id="stop-prepare-btn" disabled>
+                        <i class="bi bi-stop-circle"></i> 停止
+                    </button>
                 </div>
             </div>
         </div>
@@ -600,6 +660,7 @@
                 
             } catch (error) {
                 console.error('获取数据失败:', error);
+                showToast('获取数据失败', 'error');
             } finally {
                 isRefreshing = false;
             }
@@ -609,6 +670,17 @@
         async function fetchData(endpoint) {
             const response = await axios.get(endpoint, {
                 timeout: 5000
+            });
+            return response.data;
+        }
+
+        // 发送POST请求
+        async function postData(endpoint, data = {}) {
+            const response = await axios.post(endpoint, data, {
+                timeout: 5000,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
             return response.data;
         }
@@ -625,18 +697,36 @@
             if (isRunning) {
                 badge.className = 'status-badge running';
                 badge.textContent = '运行中';
+                badge.innerHTML = '<i class="bi bi-play-circle me-1"></i>运行中';
             } else {
                 badge.className = 'status-badge stopped';
                 badge.textContent = '已停止';
+                badge.innerHTML = '<i class="bi bi-pause-circle me-1"></i>已停止';
             }
             
             // 更新进度条
-            document.getElementById('pick-progress').style.width = `${progress}%`;
-            document.getElementById('pick-progress-text').textContent = `${processed}/${total}`;
+            const progressBar = document.getElementById('pick-progress');
+            progressBar.style.width = `${progress}%`;
+            
+            // 动态设置进度条颜色
+            if (isRunning) {
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success';
+            } else if (progress >= 100) {
+                progressBar.className = 'progress-bar bg-success';
+            } else if (progress > 0) {
+                progressBar.className = 'progress-bar bg-warning';
+            } else {
+                progressBar.className = 'progress-bar bg-secondary';
+            }
+            
+            document.getElementById('pick-progress-text').textContent = `${processed}/${total} (${progress}%)`;
             
             // 更新状态文本
             document.getElementById('pick-status').textContent = isRunning ? '运行中' : '已停止';
             document.getElementById('pick-time').textContent = data.time ? data.time.split(' ')[1] : '--';
+            
+            // 更新按钮状态
+            updateButtonState('pick', isRunning);
         }
 
         // 更新Prepare状态
@@ -651,18 +741,55 @@
             if (isRunning) {
                 badge.className = 'status-badge running';
                 badge.textContent = '运行中';
+                badge.innerHTML = '<i class="bi bi-play-circle me-1"></i>运行中';
             } else {
                 badge.className = 'status-badge stopped';
                 badge.textContent = '已停止';
+                badge.innerHTML = '<i class="bi bi-pause-circle me-1"></i>已停止';
             }
             
             // 更新进度条
-            document.getElementById('prepare-progress').style.width = `${progress}%`;
-            document.getElementById('prepare-progress-text').textContent = `${processed}/${total}`;
+            const progressBar = document.getElementById('prepare-progress');
+            progressBar.style.width = `${progress}%`;
+            
+            // 动态设置进度条颜色
+            if (isRunning) {
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success';
+            } else if (progress >= 100) {
+                progressBar.className = 'progress-bar bg-success';
+            } else if (progress > 0) {
+                progressBar.className = 'progress-bar bg-warning';
+            } else {
+                progressBar.className = 'progress-bar bg-secondary';
+            }
+            
+            document.getElementById('prepare-progress-text').textContent = `${processed}/${total} (${progress}%)`;
             
             // 更新状态文本
             document.getElementById('prepare-status').textContent = isRunning ? '运行中' : '已停止';
             document.getElementById('prepare-time').textContent = data.time ? data.time.split(' ')[1] : '--';
+            
+            // 更新按钮状态
+            updateButtonState('prepare', isRunning);
+        }
+
+        // 更新按钮状态
+        function updateButtonState(taskType, isRunning) {
+            const startBtn = document.getElementById(`start-${taskType}-btn`);
+            const stopBtn = document.getElementById(`stop-${taskType}-btn`);
+            
+            if (startBtn && stopBtn) {
+                startBtn.disabled = isRunning;
+                stopBtn.disabled = !isRunning;
+                
+                if (isRunning) {
+                    startBtn.style.opacity = '0.5';
+                    stopBtn.style.opacity = '1';
+                } else {
+                    startBtn.style.opacity = '1';
+                    stopBtn.style.opacity = '0.5';
+                }
+            }
         }
 
         // 更新股票表格
@@ -718,6 +845,86 @@
             }
         }
 
+        // 启动准备任务
+        async function startPrepareTask() {
+            try {
+                showToast('正在启动准备任务...', 'info');
+                const result = await postData('/start_prepare');
+                
+                if (result.success) {
+                    showToast('准备任务已启动', 'success');
+                    // 稍等后刷新数据
+                    setTimeout(fetchAllData, 1000);
+                } else {
+                    showToast(result.message || '启动失败', 'error');
+                }
+            } catch (error) {
+                console.error('启动准备任务失败:', error);
+                showToast('启动失败，请检查网络', 'error');
+            }
+        }
+
+        // 停止准备任务
+        async function stopPrepareTask() {
+            if (!confirm('确定要停止准备任务吗？')) return;
+            
+            try {
+                showToast('正在停止准备任务...', 'info');
+                const result = await postData('/stop_prepare');
+                
+                if (result.success) {
+                    showToast('准备任务已停止', 'success');
+                    // 稍等后刷新数据
+                    setTimeout(fetchAllData, 1000);
+                } else {
+                    showToast(result.message || '停止失败', 'error');
+                }
+            } catch (error) {
+                console.error('停止准备任务失败:', error);
+                showToast('停止失败，请检查网络', 'error');
+            }
+        }
+
+        // 启动预测任务
+        async function startPickTask() {
+            try {
+                showToast('正在启动预测任务...', 'info');
+                const result = await postData('/start_pick');
+                
+                if (result.success) {
+                    showToast('预测任务已启动', 'success');
+                    // 稍等后刷新数据
+                    setTimeout(fetchAllData, 1000);
+                } else {
+                    showToast(result.message || '启动失败', 'error');
+                }
+            } catch (error) {
+                console.error('启动预测任务失败:', error);
+                showToast('启动失败，请检查网络', 'error');
+            }
+        }
+
+        // 停止预测任务
+        async function stopPickTask() {
+            if (!confirm('确定要停止预测任务吗？')) return;
+            
+            try {
+                showToast('正在停止预测任务...', 'info');
+                const result = await postData('/stop_pick');
+                
+                if (result.success) {
+                    showToast('预测任务已停止', 'success');
+                    // 稍等后刷新数据
+                    setTimeout(fetchAllData, 1000);
+                } else {
+                    showToast(result.message || '停止失败', 'error');
+                }
+            } catch (error) {
+                console.error('停止预测任务失败:', error);
+                showToast('停止失败，请检查网络', 'error');
+            }
+        }
+
         // 显示股票详情
         function showStockDetail(stock) {
             const increase = parseFloat(stock.increase) || 0;
@@ -736,6 +943,41 @@
                 `预测涨幅：${increaseText}`
             );
         }
+
+        // 显示提示消息
+        function showToast(message, type = 'info') {
+            // 简单的提示实现
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff'};
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                z-index: 9999;
+                font-size: 0.9rem;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: fadeInOut 3s ease forwards;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 3000);
+        }
     </script>
+    
+    <style>
+        @keyframes fadeInOut {
+            0% { opacity: 0; top: 10px; }
+            10% { opacity: 1; top: 20px; }
+            90% { opacity: 1; top: 20px; }
+            100% { opacity: 0; top: 10px; }
+        }
+    </style>
 </body>
 </html>
