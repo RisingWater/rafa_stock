@@ -171,6 +171,8 @@ class StockPicker:
 
         pd_data = self._fetcher.get_all_stock_info()
 
+        self._fetcher.fetch_current_date()
+
         self.process_count = 0
         self.total_count = len(pd_data)
 

@@ -281,18 +281,5 @@ class StockDataFetcher:
         # 1. 调用get_today_data_realtime获取数据
         stock_data = StockAKShare().get_today_data_realtime(date)  # 注意：应该用self调用，不是akshare
         
-        if not stock_data.empty:
-            for _, row in stock_data.iterrows():
-                stock_code = row.get('stock_code')
-                # 2. 创建包含所有必要数据的字典
-                realtime_data = {
-                    'open': row.get('open'),
-                    'high': row.get('high'),
-                    'low': row.get('low'),
-                    'close': row.get('close'),
-                    'volume': row.get('volume'),
-                }
-                # 3. 保存到数据库
-                db.save_realtime_daily_date(stock_code, date, realtime_data)
-            print(f"✅ 实时数据获取并保存完成，共处理 {len(stock_data)} 条记录")
+        db.save_realtime_daily_date_batch(stock_data, date)
 

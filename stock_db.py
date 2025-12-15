@@ -328,6 +328,47 @@ class StockDB:
         except:
             return pd.DataFrame() 
 
+    def save_realtime_daily_date_batch(self, stock_data, date):
+        """Level 1: 基础优化 - 使用事务和executemany"""
+        import time
+        start_time = time.time()
+        
+        try:
+            import sqlite3
+            
+            # 准备批量数据
+            data_tuples = []
+            for _, row in stock_data.iterrows():
+                data_tuples.append((
+                    row.get('stock_code'), date,
+                    row.get('open'), row.get('high'), 
+                    row.get('low'), row.get('close'), 
+                    row.get('volume')
+                ))
+            
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # 关键：使用事务和executemany
+            cursor.execute('BEGIN TRANSACTION')
+            cursor.executemany('''
+                INSERT OR REPLACE INTO realtime_daily_kline 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', data_tuples)
+            
+            conn.commit()
+            conn.close()
+            
+            elapsed = time.time() - start_time
+            print(f"✅ Level1 完成 {len(data_tuples)} 条, 耗时: {elapsed:.1f}秒, "
+                f"速度: {len(data_tuples)/elapsed:.1f} 条/秒")
+            return True
+            
+        except Exception as e:
+            elapsed = time.time() - start_time
+            print(f"❌ Level1 失败 (已运行 {elapsed:.1f}秒): {e}")
+            return False
+
     def save_realtime_daily_date(self, stock_code, realtime_date, realtime_data):
         """保存实时数据"""
         try:
