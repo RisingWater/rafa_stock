@@ -1,7 +1,7 @@
 import os
 import matplotlib
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from stock_data_fetcher import StockDataFetcher
 from datetime import datetime, timedelta

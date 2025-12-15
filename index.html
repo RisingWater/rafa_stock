@@ -2,217 +2,488 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>股票预测系统监控</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>股票预测监控</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <style>
+        :root {
+            --primary-color: #4361ee;
+            --success-color: #4cc9f0;
+            --warning-color: #f72585;
+            --card-radius: 12px;
+        }
+        
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
         body {
-            background-color: #f8f9fa;
-            padding: 20px;
-        }
-        .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .container-mobile {
+            max-width: 100%;
+            padding: 0;
+        }
+        
+        /* 简化标题 */
+        .app-header {
             color: white;
-            padding: 30px 0;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px 0;
         }
-        .status-card {
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
-            transition: transform 0.3s;
+        
+        .app-header h1 {
+            font-size: 1.3rem;
+            margin: 0;
+            font-weight: 600;
         }
-        .status-card:hover {
-            transform: translateY(-5px);
+        
+        .app-header p {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin: 3px 0 0 0;
         }
-        .status-running {
-            border-left: 5px solid #28a745;
-        }
-        .status-stopped {
-            border-left: 5px solid #dc3545;
-        }
-        .progress {
-            height: 25px;
-            border-radius: 12px;
-        }
-        .stocks-table {
+        
+        /* 折叠卡片样式 */
+        .collapse-card {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-radius: var(--card-radius);
+            margin-bottom: 10px;
+            border: none;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
-        .table thead {
-            background-color: #f1f3fa;
+        
+        .collapse-header {
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
-        .positive {
-            color: #28a745;
-            font-weight: bold;
+        
+        .collapse-header:active {
+            background-color: #f5f5f5;
         }
-        .negative {
-            color: #dc3545;
-            font-weight: bold;
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
         }
-        .last-update {
-            font-size: 0.9em;
+        
+        .card-title i {
+            margin-right: 8px;
+            font-size: 1rem;
+        }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .status-badge.running {
+            background-color: rgba(76, 201, 240, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(76, 201, 240, 0.3);
+        }
+        
+        .status-badge.stopped {
+            background-color: rgba(108, 117, 125, 0.1);
             color: #6c757d;
+            border: 1px solid rgba(108, 117, 125, 0.3);
         }
-        .refresh-btn {
-            border-radius: 25px;
-            padding: 8px 20px;
+        
+        /* 折叠内容 */
+        .collapse-content {
+            padding: 0 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        
+        .collapse-content.expanded {
+            padding: 15px;
+            max-height: 500px;
+        }
+        
+        /* 进度条样式 */
+        .progress-container {
+            margin: 15px 0;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .progress {
+            height: 18px;
+            border-radius: 9px;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            border-radius: 9px;
+            transition: width 0.5s ease;
+        }
+        
+        /* 状态信息行 */
+        .status-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            color: #888;
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        /* 选股结果区域 */
+        .stocks-section {
+            background: white;
+            border-radius: var(--card-radius);
+            margin-top: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .section-header {
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .section-header:active {
+            background-color: #f5f5f5;
+        }
+        
+        .stocks-count {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        /* 表格区域 */
+        .table-container {
+            max-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            transition: max-height 0.3s ease;
+        }
+        
+        .table-container.expanded {
+            max-height: 400px;
+        }
+        
+        .stocks-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .stocks-table th {
+            background-color: #f8f9fa;
+            padding: 10px 8px;
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: 500;
+            text-align: left;
+            border-bottom: 2px solid #eee;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .stocks-table td {
+            padding: 10px 8px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .stock-row {
+            transition: background-color 0.2s;
+        }
+        
+        .stock-row:active {
+            background-color: #f5f5f5;
+        }
+        
+        .stock-code {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .stock-name {
+            color: #333;
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .positive {
+            color: #07c160;
+            font-weight: 600;
+        }
+        
+        .negative {
+            color: #fa5151;
+            font-weight: 600;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 30px 15px;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        /* 底部状态栏 */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding: 10px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.8rem;
+        }
+        
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+        }
+        
+        .auto-refresh input {
+            margin-right: 6px;
+            width: 16px;
+            height: 16px;
+        }
+        
+        /* 下拉刷新指示器 */
+        .refresh-indicator {
+            position: fixed;
+            top: -50px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: top 0.3s ease;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .refresh-indicator.active {
+            top: 0;
+        }
+        
+        .refresh-indicator i {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-right: 10px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 576px) {
+            .stocks-table {
+                font-size: 0.8rem;
+            }
+            
+            .stocks-table th,
+            .stocks-table td {
+                padding: 8px 5px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <!-- 标题区域 -->
-        <div class="header text-center">
-            <h1><i class="bi bi-graph-up"></i> 股票预测系统监控</h1>
-            <p class="lead mb-0">实时监控股票预测系统的运行状态</p>
+    <div class="container-mobile">
+        <!-- 简化标题 -->
+        <div class="app-header">
+            <h1><i class="bi bi-graph-up"></i> 股票预测监控</h1>
+            <p>下拉刷新数据</p>
         </div>
-
-        <!-- 状态卡片区域 -->
-        <div class="row">
-            <!-- Pick 状态 -->
-            <div class="col-lg-6">
-                <div class="card status-card" id="pick-status-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title">
-                                <i class="bi bi-search"></i> Pick 预测任务
-                            </h5>
-                            <span class="badge" id="pick-badge">--</span>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>处理进度</span>
-                                <span id="pick-progress-text">0/0</span>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                     id="pick-progress" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="mb-2">
-                                    <small class="text-muted">状态:</small>
-                                    <div id="pick-status">--</div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="mb-2">
-                                    <small class="text-muted">最后更新:</small>
-                                    <div class="last-update" id="pick-time">--</div>
-                                </div>
-                            </div>
-                        </div>
+        
+        <!-- Pick 状态卡片（默认收起） -->
+        <div class="collapse-card">
+            <div class="collapse-header" onclick="toggleCard('pick-card')">
+                <div class="card-title">
+                    <i class="bi bi-search"></i>
+                    <span>预测任务</span>
+                </div>
+                <span class="status-badge" id="pick-badge">--</span>
+            </div>
+            <div class="collapse-content" id="pick-card-content">
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>处理进度</span>
+                        <span id="pick-progress-text">0/0</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped" 
+                             id="pick-progress" style="width: 0%"></div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Prepare 状态 -->
-            <div class="col-lg-6">
-                <div class="card status-card" id="prepare-status-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title">
-                                <i class="bi bi-gear"></i> Prepare 准备任务
-                            </h5>
-                            <span class="badge" id="prepare-badge">--</span>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>处理进度</span>
-                                <span id="prepare-progress-text">0/0</span>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                     id="prepare-progress" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="mb-2">
-                                    <small class="text-muted">状态:</small>
-                                    <div id="prepare-status">--</div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="mb-2">
-                                    <small class="text-muted">最后更新:</small>
-                                    <div class="last-update" id="prepare-time">--</div>
-                                </div>
-                            </div>
-                        </div>
+                <div class="status-info">
+                    <div class="info-item">
+                        <span class="info-label">状态</span>
+                        <span class="info-value" id="pick-status">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">更新时间</span>
+                        <span class="info-value" id="pick-time">--</span>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- 控制按钮 -->
-        <div class="row mb-4">
-            <div class="col-12 text-center">
-                <button class="btn btn-primary refresh-btn me-2" onclick="fetchAllData()">
-                    <i class="bi bi-arrow-clockwise"></i> 刷新数据
-                </button>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="auto-refresh" checked>
-                    <label class="form-check-label" for="auto-refresh">自动刷新 (每10秒)</label>
+        
+        <!-- Prepare 状态卡片（默认收起） -->
+        <div class="collapse-card">
+            <div class="collapse-header" onclick="toggleCard('prepare-card')">
+                <div class="card-title">
+                    <i class="bi bi-gear"></i>
+                    <span>准备任务</span>
+                </div>
+                <span class="status-badge" id="prepare-badge">--</span>
+            </div>
+            <div class="collapse-content" id="prepare-card-content">
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>处理进度</span>
+                        <span id="prepare-progress-text">0/0</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped" 
+                             id="prepare-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="status-info">
+                    <div class="info-item">
+                        <span class="info-label">状态</span>
+                        <span class="info-value" id="prepare-status">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">更新时间</span>
+                        <span class="info-value" id="prepare-time">--</span>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- 选股结果表格 -->
-        <div class="card stocks-table">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-list-stars"></i> 选股结果</h5>
-                <span class="badge bg-primary" id="stock-count">0 只股票</span>
+        
+        <!-- 选股结果区域（默认收起） -->
+        <div class="stocks-section">
+            <div class="section-header" onclick="toggleCard('stocks-card')">
+                <div class="card-title">
+                    <i class="bi bi-list-stars"></i>
+                    <span>选股结果</span>
+                </div>
+                <span class="stocks-count" id="stock-count">0 只</span>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>股票代码</th>
-                                <th>股票名称</th>
-                                <th>预测日期</th>
-                                <th>开盘价</th>
-                                <th>收盘价</th>
-                                <th>最高价</th>
-                                <th>最低价</th>
-                                <th>涨幅</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stocks-table-body">
-                            <!-- 数据将通过JavaScript动态填充 -->
-                        </tbody>
-                    </table>
+            <div class="table-container" id="stocks-card-content">
+                <table class="stocks-table">
+                    <thead>
+                        <tr>
+                            <th>代码</th>
+                            <th>名称</th>
+                            <th>涨幅</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stocks-table-body">
+                        <!-- 股票数据将动态生成 -->
+                    </tbody>
+                </table>
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <i class="bi bi-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>暂无选股数据</p>
                 </div>
             </div>
         </div>
-
-        <!-- 空状态提示 -->
-        <div id="empty-state" class="text-center py-5" style="display: none;">
-            <i class="bi bi-inbox" style="font-size: 48px; color: #6c757d;"></i>
-            <h4 class="mt-3">暂无选股数据</h4>
-            <p class="text-muted">等待预测系统运行完成后将显示选股结果</p>
+        
+        <!-- 底部状态栏 -->
+        <div class="status-bar">
+            <div class="auto-refresh">
+                <input type="checkbox" id="auto-refresh" checked>
+                <label for="auto-refresh">自动刷新</label>
+            </div>
+            <div>
+                最后更新: <span id="global-update-time">--</span>
+            </div>
+        </div>
+        
+        <!-- 下拉刷新指示器 -->
+        <div class="refresh-indicator" id="refresh-indicator">
+            <i class="bi bi-arrow-clockwise"></i>
+            <span>正在刷新数据...</span>
         </div>
     </div>
 
-    <!-- 添加必要的JavaScript库 -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     
     <script>
-        // 基础URL - 根据你的实际部署地址修改
-        const BASE_URL = '';  // 假设你的FastAPI运行在8000端口
+        // 基础URL配置
+        const BASE_URL = '';  // 使用相对路径
         
-        // 自动刷新间隔（毫秒）
+        // 刷新间隔（毫秒）
         const REFRESH_INTERVAL = 10000;
         let autoRefreshInterval;
+        let lastUpdateTime = '--';
+        let isRefreshing = false;
+        
+        // 卡片展开状态
+        const cardState = {
+            'pick-card': false,
+            'prepare-card': false,
+            'stocks-card': false
+        };
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -224,25 +495,93 @@
             
             // 监听自动刷新复选框
             document.getElementById('auto-refresh').addEventListener('change', setupAutoRefresh);
+            
+            // 设置下拉刷新
+            setupPullToRefresh();
         });
 
         // 设置自动刷新
         function setupAutoRefresh() {
             const autoRefresh = document.getElementById('auto-refresh').checked;
             
-            // 清除现有的定时器
             if (autoRefreshInterval) {
                 clearInterval(autoRefreshInterval);
             }
             
-            // 如果选中自动刷新，则设置新的定时器
             if (autoRefresh) {
                 autoRefreshInterval = setInterval(fetchAllData, REFRESH_INTERVAL);
             }
         }
 
+        // 设置下拉刷新
+        function setupPullToRefresh() {
+            let startY = 0;
+            let isDragging = false;
+            const refreshIndicator = document.getElementById('refresh-indicator');
+            
+            document.addEventListener('touchstart', e => {
+                startY = e.touches[0].clientY;
+                isDragging = true;
+            });
+            
+            document.addEventListener('touchmove', e => {
+                if (!isDragging) return;
+                
+                const currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+                
+                // 下拉超过50px触发刷新指示
+                if (diff > 50 && window.scrollY <= 0) {
+                    e.preventDefault();
+                    refreshIndicator.classList.add('active');
+                }
+            });
+            
+            document.addEventListener('touchend', e => {
+                isDragging = false;
+                
+                if (refreshIndicator.classList.contains('active')) {
+                    // 触发刷新
+                    refreshIndicator.classList.remove('active');
+                    showRefreshIndicator();
+                    fetchAllData();
+                }
+            });
+        }
+
+        // 显示刷新指示器
+        function showRefreshIndicator() {
+            const indicator = document.getElementById('refresh-indicator');
+            indicator.classList.add('active');
+            
+            setTimeout(() => {
+                indicator.classList.remove('active');
+            }, 1000);
+        }
+
+        // 切换卡片展开状态
+        function toggleCard(cardId) {
+            const content = document.getElementById(cardId + '-content');
+            cardState[cardId] = !cardState[cardId];
+            
+            if (cardState[cardId]) {
+                content.classList.add('expanded');
+            } else {
+                content.classList.remove('expanded');
+            }
+            
+            // 如果是选股卡片，首次展开时刷新数据
+            if (cardId === 'stocks-card' && cardState[cardId]) {
+                fetchAllData();
+            }
+        }
+
         // 获取所有数据
         async function fetchAllData() {
+            if (isRefreshing) return;
+            
+            isRefreshing = true;
+            
             try {
                 // 同时获取pick和prepare数据
                 const [pickData, prepareData] = await Promise.all([
@@ -255,15 +594,22 @@
                 updatePrepareStatus(prepareData);
                 updateStocksTable(pickData.select_stocks || []);
                 
+                // 更新最后更新时间
+                lastUpdateTime = new Date().toLocaleTimeString('zh-CN');
+                document.getElementById('global-update-time').textContent = lastUpdateTime;
+                
             } catch (error) {
                 console.error('获取数据失败:', error);
-                showError('获取数据失败，请检查网络连接');
+            } finally {
+                isRefreshing = false;
             }
         }
 
         // 获取单个接口数据
         async function fetchData(endpoint) {
-            const response = await axios.get(`${BASE_URL}${endpoint}`);
+            const response = await axios.get(endpoint, {
+                timeout: 5000
+            });
             return response.data;
         }
 
@@ -274,19 +620,13 @@
             const total = data.total || 0;
             const progress = total > 0 ? Math.round((processed / total) * 100) : 0;
             
-            // 更新卡片样式
-            const card = document.getElementById('pick-status-card');
+            // 更新状态徽章
             const badge = document.getElementById('pick-badge');
-            
             if (isRunning) {
-                card.classList.remove('status-stopped');
-                card.classList.add('status-running');
-                badge.className = 'badge bg-success';
+                badge.className = 'status-badge running';
                 badge.textContent = '运行中';
             } else {
-                card.classList.remove('status-running');
-                card.classList.add('status-stopped');
-                badge.className = 'badge bg-secondary';
+                badge.className = 'status-badge stopped';
                 badge.textContent = '已停止';
             }
             
@@ -296,7 +636,7 @@
             
             // 更新状态文本
             document.getElementById('pick-status').textContent = isRunning ? '运行中' : '已停止';
-            document.getElementById('pick-time').textContent = data.time || '--';
+            document.getElementById('pick-time').textContent = data.time ? data.time.split(' ')[1] : '--';
         }
 
         // 更新Prepare状态
@@ -306,19 +646,13 @@
             const total = data.total || 0;
             const progress = total > 0 ? Math.round((processed / total) * 100) : 0;
             
-            // 更新卡片样式
-            const card = document.getElementById('prepare-status-card');
+            // 更新状态徽章
             const badge = document.getElementById('prepare-badge');
-            
             if (isRunning) {
-                card.classList.remove('status-stopped');
-                card.classList.add('status-running');
-                badge.className = 'badge bg-success';
+                badge.className = 'status-badge running';
                 badge.textContent = '运行中';
             } else {
-                card.classList.remove('status-running');
-                card.classList.add('status-stopped');
-                badge.className = 'badge bg-secondary';
+                badge.className = 'status-badge stopped';
                 badge.textContent = '已停止';
             }
             
@@ -328,7 +662,7 @@
             
             // 更新状态文本
             document.getElementById('prepare-status').textContent = isRunning ? '运行中' : '已停止';
-            document.getElementById('prepare-time').textContent = data.time || '--';
+            document.getElementById('prepare-time').textContent = data.time ? data.time.split(' ')[1] : '--';
         }
 
         // 更新股票表格
@@ -338,9 +672,9 @@
             const stockCount = document.getElementById('stock-count');
             
             // 更新股票数量
-            stockCount.textContent = `${stocks.length} 只股票`;
+            stockCount.textContent = `${stocks.length} 只`;
             
-            // 如果没有股票数据，显示空状态
+            // 如果没有股票数据
             if (stocks.length === 0) {
                 tableBody.innerHTML = '';
                 emptyState.style.display = 'block';
@@ -353,9 +687,10 @@
             // 清空表格
             tableBody.innerHTML = '';
             
-            // 添加股票数据行
-            stocks.forEach(stock => {
+            // 添加股票数据行（简化显示）
+            stocks.forEach((stock, index) => {
                 const row = document.createElement('tr');
+                row.className = 'stock-row';
                 
                 // 根据涨幅设置颜色
                 const increase = parseFloat(stock.increase) || 0;
@@ -363,24 +698,43 @@
                 const increaseText = increase >= 0 ? `+${increase.toFixed(2)}%` : `${increase.toFixed(2)}%`;
                 
                 row.innerHTML = `
-                    <td><strong>${stock.stock_code || '--'}</strong></td>
-                    <td>${stock.stock_name || '--'}</td>
-                    <td>${stock.date || '--'}</td>
-                    <td>${stock.open ? parseFloat(stock.open).toFixed(2) : '--'}</td>
-                    <td>${stock.close ? parseFloat(stock.close).toFixed(2) : '--'}</td>
-                    <td>${stock.high ? parseFloat(stock.high).toFixed(2) : '--'}</td>
-                    <td>${stock.low ? parseFloat(stock.low).toFixed(2) : '--'}</td>
+                    <td class="stock-code">${stock.stock_code || '--'}</td>
+                    <td class="stock-name" title="${stock.stock_name || ''}">${stock.stock_name || '--'}</td>
                     <td class="${increaseClass}">${increaseText}</td>
                 `;
                 
+                // 点击查看详情
+                row.addEventListener('click', () => {
+                    showStockDetail(stock);
+                });
+                
                 tableBody.appendChild(row);
             });
+            
+            // 如果股票卡片是展开状态，确保表格区域也展开
+            if (cardState['stocks-card']) {
+                const tableContainer = document.getElementById('stocks-card-content');
+                tableContainer.classList.add('expanded');
+            }
         }
 
-        // 显示错误信息
-        function showError(message) {
-            // 可以在这里添加更美观的错误提示
-            console.error(message);
+        // 显示股票详情
+        function showStockDetail(stock) {
+            const increase = parseFloat(stock.increase) || 0;
+            const increaseClass = increase >= 0 ? 'positive' : 'negative';
+            const increaseText = increase >= 0 ? `+${increase.toFixed(2)}%` : `${increase.toFixed(2)}%`;
+            
+            alert(
+                `股票详情\n\n` +
+                `代码：${stock.stock_code || '--'}\n` +
+                `名称：${stock.stock_name || '--'}\n` +
+                `日期：${stock.date || '--'}\n` +
+                `开盘价：${stock.open ? parseFloat(stock.open).toFixed(2) : '--'}\n` +
+                `收盘价：${stock.close ? parseFloat(stock.close).toFixed(2) : '--'}\n` +
+                `最高价：${stock.high ? parseFloat(stock.high).toFixed(2) : '--'}\n` +
+                `最低价：${stock.low ? parseFloat(stock.low).toFixed(2) : '--'}\n` +
+                `预测涨幅：${increaseText}`
+            );
         }
     </script>
 </body>
