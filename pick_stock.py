@@ -37,7 +37,7 @@ class StockPicker:
         for _, row in pd_data.iterrows():  
             stock_code = row.get('stock_code')
             stock_name = row.get('stock_name')
-            self._fetcher.get_daily_kline(stock_code, current_date, current_date, sleep_time=2)
+            self._fetcher.get_daily_kline(stock_code, last_date, last_date, sleep_time=2)
 
             self.prepare_count = self.prepare_count + 1
 
