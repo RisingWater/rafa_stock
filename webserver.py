@@ -21,10 +21,7 @@ fetcher = StockDataFetcher()
 @app.get("/")
 async def root():
     """根路径"""
-    return {
-        "message": "stock API",
-        "version": "1.0", 
-    }
+    return FileResponse("index.html")
 
 @app.get("/pick")
 async def root():
