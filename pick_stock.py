@@ -65,15 +65,18 @@ class StockPicker:
             stock_code = row.get('stock_code')
             stock_name = row.get('stock_name')
             
-            self._fetcher.get_daily_kline(stock_code, current_date, current_date, sleep_time=sleep_time)
+            try:
+                self._fetcher.get_daily_kline(stock_code, current_date, current_date, sleep_time=sleep_time)
 
-            p_data = self._db.get_predict_daily_data(stock_code, predict_date)
-            if p_data.empty:
-                sleep_time = 0
-                tmp = self._predict_stock(stock_code, predict_date)
-                self._db.save_predict_daily_data(stock_code, predict_date, tmp[0])
-            else:
-                sleep_time = 2
+                p_data = self._db.get_predict_daily_data(stock_code, predict_date)
+                if p_data.empty:
+                    sleep_time = 0
+                    tmp = self._predict_stock(stock_code, predict_date)
+                    self._db.save_predict_daily_data(stock_code, predict_date, tmp[0])
+                else:
+                    sleep_time = 2
+            except Exception as e:
+                logger.error(f"获取股票数据失败: {stock_code} {stock_name} {e}")
 
             self.prepare_count = self.prepare_count + 1
 
