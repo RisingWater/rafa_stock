@@ -37,6 +37,16 @@ async def root():
         "select_stocks": select_stocks,
     }
 
+@app.get("/prepare")
+async def root():
+    """根路径"""
+    return {
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "is_running": picker.prepare_running,
+        "process": picker.prepare_count, 
+        "total": picker.prepare_total_count,
+    }
+
 class PredictRequest(BaseModel):
     stock_code: str
     stock_name: str

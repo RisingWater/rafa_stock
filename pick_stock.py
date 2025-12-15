@@ -16,6 +16,9 @@ class StockPicker:
         self.process_count = 0
         self.is_running = False
         self.total_count = 0
+        self.prepare_running = False
+        self.prepare_count = 0
+        self.prepare_total_count = 0
 
     def prepare_stock(self):
         """
@@ -24,12 +27,30 @@ class StockPicker:
             从api获取之后sleep两秒，防止api调用过于频繁
             1800只股票准备一次数据大约1-2小时
         """ 
+        self.prepare_running = True
         pd_data = self._fetcher.get_all_stock_info()
         last_date, current_date, predict_date = self._get_trade_date()
+    
+        self.prepare_count = 0
+        self.prepare_total_count = len(pd_data)
 
         for _, row in pd_data.iterrows():  
             stock_code = row.get('stock_code')
+            stock_name = row.get('stock_name')
             self._fetcher.get_daily_kline(stock_code, current_date, current_date, sleep_time=2)
+
+            self.prepare_count = self.prepare_count + 1
+
+            # 计算百分比
+            percent = (self.prepare_count / self.prepare_total_count) * 100
+            # 可视化进度条（长度为20）
+            bar_length = 40
+            filled_length = int(bar_length * self.prepare_count / self.prepare_total_count)
+            bar = '█' * filled_length + '-' * (bar_length - filled_length)
+            # 输出进度条（\r 覆盖，end='' 不换行）
+            print(f"\r进度: [{bar}] {percent:.1f}% {self.prepare_count}/{self.prepare_total_count} {stock_name}({stock_code})          ", end='', flush=True)
+
+        self.prepare_running = False
 
     def _predict_stock(self, stock_code, datetime, current_data = pd.DataFrame()):
         end_date = self._tools.get_trading_day(datetime, delta=-1)
@@ -139,7 +160,7 @@ class StockPicker:
 
         pd_data = self._fetcher.get_all_stock_info()
 
-        self.process = 0
+        self.process_count = 0
         self.total_count = len(pd_data)
 
         last_date, current_date, predict_date = self._get_trade_date()
@@ -153,16 +174,16 @@ class StockPicker:
             stock_code = row.get('stock_code')
             stock_name = row.get('stock_name')
 
-            self.process = self.process + 1
+            self.process_count = self.process_count + 1
 
             # 计算百分比
-            percent = (self.process / self.total_count) * 100
+            percent = (self.process_count / self.total_count) * 100
             # 可视化进度条（长度为20）
             bar_length = 40
-            filled_length = int(bar_length * self.process / self.total_count)
+            filled_length = int(bar_length * self.process_count / self.total_count)
             bar = '█' * filled_length + '-' * (bar_length - filled_length)
             # 输出进度条（\r 覆盖，end='' 不换行）
-            print(f"\r进度: [{bar}] {percent:.1f}% {self.process}/{self.total_count} {stock_name}({stock_code})          ", end='', flush=True)
+            print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})          ", end='', flush=True)
 
             #获取上一个交易日的股票数据与预测数据
             try:
@@ -231,6 +252,8 @@ class StockPicker:
         else:
             # 筛选后不足3个，取排序后的前3个
             selected_stocks = sorted_stocks[:5]
+
+        self.is_running = False
 
         return selected_stocks
 

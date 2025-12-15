@@ -21,8 +21,6 @@ class StockAKShare:
             pandas.DataFrame: 包含日K线数据的DataFrame
         """
         try:
-            print(f"📡 从东方财经API获取日线数据: {stock_code} {start_date} 到 {end_date}")
-
             # 获取日线数据
             stock_data = ak.stock_zh_a_daily(
                 symbol=symbol,
@@ -34,7 +32,6 @@ class StockAKShare:
 
             # sleep防止调用过于频繁
             if sleep_time > 0:
-                print(f"💤 休眠 {sleep_time} 秒...")
                 time.sleep(sleep_time)
 
             if not stock_data.empty:
@@ -55,8 +52,6 @@ class StockAKShare:
                 # 按时间排序
                 stock_data = stock_data.sort_values('date')
                             
-                print(f"✅ 从东方财经API获取日线数据成功: {symbol} - {len(stock_data)} 条")
-                
             return stock_data
                     
         except Exception as e:
@@ -90,8 +85,6 @@ class StockAKShare:
             else:
                 symbol = f"sz{stock_code}"  # 深圳
             
-            print(f"📡 从新浪API获取日线数据: {symbol} {start_date} 到 {end_date}")
-            
             # 获取日线数据
             stock_data = ak.stock_zh_a_daily(
                 symbol=symbol,
@@ -102,7 +95,6 @@ class StockAKShare:
 
             # sleep防止调用过于频繁
             if sleep_time > 0:
-                print(f"💤 休眠 {sleep_time} 秒...")
                 time.sleep(sleep_time)
             
             if not stock_data.empty:
@@ -123,8 +115,6 @@ class StockAKShare:
                 # 按时间排序
                 stock_data = stock_data.sort_values('date')
                             
-                print(f"✅ 从新浪API获取日线数据成功: {symbol} - {len(stock_data)} 条")
-                
             return stock_data
             
         except Exception as e:

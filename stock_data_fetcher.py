@@ -45,7 +45,6 @@ class StockDataFetcher:
 
                 if not full_data.empty:
                     db.save_daily_data(stock_code, full_data)
-                    print(f"✅ 更新一年数据成功: {len(full_data)} 条")
                     
                     # 从完整数据中提取请求的时间范围
                     update_data = full_data[
