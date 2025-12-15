@@ -225,10 +225,7 @@ class StockPicker:
             try:
                 current_data = self._db.get_realtime_daily_data(stock_code, current_date)
                 if current_data.empty:
-                    self._fetcher.fetch_current_date(current_date)
-                    current_data = self._db.get_realtime_daily_data(stock_code, current_date)
-                    if current_data.empty:
-                        continue
+                    continue
 
                 curdate_p_data = self._db.get_predict_daily_data(stock_code, current_date)
                 if curdate_p_data.empty:
