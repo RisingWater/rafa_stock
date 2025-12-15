@@ -41,7 +41,7 @@ class StockDataFetcher:
                 # 否则从API获取数据并更新数据库
                 # 直接获取1000天的数据，确保数据完整
                 one_year_ago = (datetime.now() - timedelta(days=1000)).strftime("%Y%m%d")
-                full_data = StockAKShare().get_daily_kline_from_api(stock_code, one_year_ago, end_date.replace('-', ''), sleep_time)
+                full_data = StockAKShare().get_daily_kline_from_api_sina(stock_code, one_year_ago, end_date.replace('-', ''), sleep_time=sleep_time)
 
                 if not full_data.empty:
                     db.save_daily_data(stock_code, full_data)

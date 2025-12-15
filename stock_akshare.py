@@ -6,7 +6,65 @@ import time
 class StockAKShare:
     def __init__(self):
         pass
-    def get_daily_kline_from_api(self, stock_code, start_date, end_date, adjust='qfq', sleep_time=0):
+
+    def get_daily_kline_from_api_easymoney(self, stock_code, start_date, end_date, adjust='qfq', sleep_time=0):
+        """
+        从东方财经API获取日K线数据
+        
+        参数:
+            stock_code (str): 股票代码，格式如 "000001"
+            start_date (str): 开始时间 "YYYYMMDD"
+            end_date (str): 结束时间 "YYYYMMDD"
+            adjust (str): 复权类型 '', 'qfq', 'hfq'
+            
+        返回:
+            pandas.DataFrame: 包含日K线数据的DataFrame
+        """
+        try:
+            print(f"📡 从东方财经API获取日线数据: {stock_code} {start_date} 到 {end_date}")
+
+            # 获取日线数据
+            stock_data = ak.stock_zh_a_daily(
+                symbol=symbol,
+                period='daily',
+                start_date=start_date,
+                end_date=end_date,
+                adjust=adjust
+            )
+
+            # sleep防止调用过于频繁
+            if sleep_time > 0:
+                print(f"💤 休眠 {sleep_time} 秒...")
+                time.sleep(sleep_time)
+
+            if not stock_data.empty:
+                # 新浪接口返回的列名已经是英文，但需要确保格式一致
+                stock_data = stock_data.rename(columns={
+                    '日期': 'date',
+                    '开盘': 'open', 
+                    '最高': 'high',
+                    '最低': 'low',
+                    '收盘': 'close',
+                    '成交量': 'volume',
+                    '成交额': 'amount'
+                })
+                
+                # 确保日期列为datetime类型
+                stock_data['date'] = pd.to_datetime(stock_data['date'])
+                
+                # 按时间排序
+                stock_data = stock_data.sort_values('date')
+                            
+                print(f"✅ 从东方财经API获取日线数据成功: {symbol} - {len(stock_data)} 条")
+                
+            return stock_data
+                    
+        except Exception as e:
+            print(f"❌ 从东方财经API获取日线数据失败: {e}")
+            return pd.DataFrame()
+
+    
+    def get_daily_kline_from_api_sina(self, stock_code, start_date, end_date, adjust='qfq', sleep_time=0):
         """
         从新浪财经API获取日K线数据
         
