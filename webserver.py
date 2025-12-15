@@ -360,6 +360,12 @@ def predict_timer():
         time.sleep(1)  # 每秒检查一次，提高精度
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
     timer_thread = threading.Thread(target=predict_timer, daemon=True)
     timer_thread.start()
 
