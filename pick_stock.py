@@ -73,7 +73,7 @@ class StockPicker:
 
                 sleep_time = 2
 
-                p_data = self._db.get_daily_data(stock_code, last_date)
+                p_data = self._db.get_predict_daily_data(stock_code, last_date)
                 if p_data.empty:
                     sleep_time = 0
                     tmp = self._predict_stock(stock_code, last_date)
@@ -84,7 +84,7 @@ class StockPicker:
                     sleep_time = 0
                     tmp = self._predict_stock(stock_code, predict_date)
                     self._db.save_predict_daily_data(stock_code, predict_date, tmp[0])
-                    
+
             except Exception as e:
                 logger.error(f"获取股票数据失败: {stock_code} {stock_name} {e}")
 
