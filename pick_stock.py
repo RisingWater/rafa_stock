@@ -75,15 +75,21 @@ class StockPicker:
 
                 p_data = self._db.get_predict_daily_data(stock_code, last_date)
                 if p_data.empty:
+                    logger.info(f"前一日交易日预测数据不存在，重新预测: {stock_code} {last_date}")
                     sleep_time = 0
                     tmp = self._predict_stock(stock_code, last_date)
                     self._db.save_predict_daily_data(stock_code, last_date, tmp[0])
+                else:
+                    logger.info(f"前一日交易日预测数据已存在，跳过: {stock_code} {last_date}")
 
                 p_data = self._db.get_predict_daily_data(stock_code, predict_date)
                 if p_data.empty:
+                    logger.info(f"当前日交易日预测数据不存在，重新预测: {stock_code} {predict_date}")
                     sleep_time = 0
                     tmp = self._predict_stock(stock_code, predict_date)
                     self._db.save_predict_daily_data(stock_code, predict_date, tmp[0])
+                else:
+                    logger.info(f"当前日交易日预测数据已存在，跳过: {stock_code} {predict_date}")
 
             except Exception as e:
                 logger.error(f"获取股票数据失败: {stock_code} {stock_name} {e}")
@@ -257,7 +263,7 @@ class StockPicker:
                 lastdate_data = self._fetcher.get_daily_kline(stock_code, last_date, last_date)
                 lastdate_p_data = self._db.get_predict_daily_data(stock_code, last_date)
                 if lastdate_p_data.empty:
-                    logger.info(f"前一日交易日预测数据不存在，重新预测: {stock_code} {current_date}")
+                    logger.info(f"前一日交易日预测数据不存在，重新预测: {stock_code} {last_date}")
                     tmp = self._predict_stock(stock_code, last_date)
                     self._db.save_predict_daily_data(stock_code, last_date, tmp[0])
                     lastdate_p_data = self._db.get_predict_daily_data(stock_code, last_date)
