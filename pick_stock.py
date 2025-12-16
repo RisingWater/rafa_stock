@@ -257,6 +257,7 @@ class StockPicker:
                 lastdate_data = self._fetcher.get_daily_kline(stock_code, last_date, last_date)
                 lastdate_p_data = self._db.get_predict_daily_data(stock_code, last_date)
                 if lastdate_p_data.empty:
+                    logger.info(f"前一日交易日预测数据不存在，重新预测: {stock_code} {current_date}")
                     tmp = self._predict_stock(stock_code, last_date)
                     self._db.save_predict_daily_data(stock_code, last_date, tmp[0])
                     lastdate_p_data = self._db.get_predict_daily_data(stock_code, last_date)
