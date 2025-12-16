@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class StockTools:
     def __init__(self):
-        pass
+        self._trading_day_cache = {}
     
     def get_trading_day(self, date, delta=1):
         """
@@ -77,8 +77,16 @@ class StockTools:
                 date_obj = datetime.strptime(date, '%Y-%m-%d')
             else:
                 date_obj = date
+
+            cache_key = date_obj.strftime("%Y-%m-%d")
+            if cache_key in self._trading_day_cache:
+                return self._trading_day_cache[cache_key]
             
-            return calendar.is_workday(date_obj) and date_obj.weekday() < 5
+            is_trading_day = calendar.is_workday(date_obj) and date_obj.weekday() < 5
+
+            self._trading_day_cache[cache_key] = is_trading_day
+
+            return is_trading_day
             
         except Exception as e:
             logger.error(f"判断交易日失败: {e}")
