@@ -41,20 +41,17 @@ class StockPicker:
         if self._tools.is_trading_day(now):
             #如果当前是交易日
             if now.hour <= 18:
-                last_date = self._tools.get_trading_day(now, -2)
                 #收盘前，都是获取上一个交易日的k线数据
                 current_date = self._tools.get_trading_day(now, -1)
                 #预测是今天的k线数据
                 predict_date = self._tools.get_trading_day(now, 0)
             else:
-                last_date = self._tools.get_trading_day(now, -1)
                 #收盘后，就可以获取今天的k线数据
                 current_date = self._tools.get_trading_day(now, 0)
                 #预测是明天的k线数据
                 predict_date = self._tools.get_trading_day(now, 1)
         else:
             # 如果当前不是交易日
-            last_date = self._tools.get_trading_day(now, -2)
             # 获取到上一个交易日的股票k线数据
             current_date = self._tools.get_trading_day(now, -1)
             # 预测下一个交易日的k线数据
@@ -73,14 +70,14 @@ class StockPicker:
 
                 sleep_time = 2
 
-                p_data = self._db.get_predict_daily_data(stock_code, last_date)
+                p_data = self._db.get_predict_daily_data(stock_code, current_date)
                 if p_data.empty:
-                    logger.info(f"前一日交易日预测数据不存在，重新预测: {stock_code} {last_date}")
+                    logger.info(f"前一日交易日预测数据不存在，重新预测: {stock_code} {current_date}")
                     sleep_time = 0
-                    tmp = self._predict_stock(stock_code, last_date)
-                    self._db.save_predict_daily_data(stock_code, last_date, tmp[0])
+                    tmp = self._predict_stock(stock_code, current_date)
+                    self._db.save_predict_daily_data(stock_code, current_date, tmp[0])
                 else:
-                    logger.info(f"前一日交易日预测数据已存在，跳过: {stock_code} {last_date}")
+                    logger.info(f"前一日交易日预测数据已存在，跳过: {stock_code} {current_date}")
 
                 p_data = self._db.get_predict_daily_data(stock_code, predict_date)
                 if p_data.empty:
