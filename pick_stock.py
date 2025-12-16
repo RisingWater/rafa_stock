@@ -238,9 +238,9 @@ class StockPicker:
 
             if console_print:
                 # 输出进度条（\r 覆盖，end='' 不换行）
-                print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})          ", end='', flush=True)
+                print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 1/4          ", end='', flush=True)
             else:
-                logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code})")
+                logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 1/4")
 
             #获取上一个交易日的股票数据与预测数据
             try:
@@ -256,6 +256,12 @@ class StockPicker:
             except Exception as e:
                 logger.error(f"获取上一个交易日的股票数据失败: {stock_code} {e}")
                 continue
+
+            if console_print:
+                # 输出进度条（\r 覆盖，end='' 不换行）
+                print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 2/4          ", end='', flush=True)
+            else:
+                logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 2/4")
             
             #获取当前交易日的股票数据与预测数据
             try:
@@ -265,6 +271,7 @@ class StockPicker:
 
                 curdate_p_data = self._db.get_predict_daily_data(stock_code, current_date)
                 if curdate_p_data.empty:
+                    logger.info(f"当前交易日预测数据不存在，重新预测: {stock_code} {current_date}")
                     tmp = self._predict_stock(stock_code, current_date)
                     self._db.save_predict_daily_data(stock_code, current_date, tmp[0])
                     curdate_p_data = self._db.get_predict_daily_data(stock_code, current_date)
@@ -275,6 +282,12 @@ class StockPicker:
                 logger.error(f"获取当前交易日的股票数据失败: {stock_code} {e}")
                 continue
 
+            if console_print:
+                # 输出进度条（\r 覆盖，end='' 不换行）
+                print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 3/4          ", end='', flush=True)
+            else:
+                logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 3/4")
+            
             #预测下一个交易日数据，并存储
             try:
                 predict_data = self._predict_stock(stock_code, current_date, current_data)
@@ -293,6 +306,12 @@ class StockPicker:
             except Exception as e:
                 logger.error(f"预测股票数据失败: {stock_code}")
                 continue
+
+            if console_print:
+                # 输出进度条（\r 覆盖，end='' 不换行）
+                print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 4/4          ", end='', flush=True)
+            else:
+                logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 4/4")    
 
         #按increase从大到小排序
         sorted_stocks = sorted(pick_up_stocks, key=lambda x: x['increase'], reverse=True)
