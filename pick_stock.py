@@ -40,7 +40,7 @@ class StockPicker:
 
         if self._tools.is_trading_day(now):
             #如果当前是交易日
-            if now.hour <= 15:
+            if now.hour <= 18:
                 #收盘前，都是获取上一个交易日的k线数据
                 current_date = self._tools.get_trading_day(now, -1)
                 #预测是今天的k线数据
