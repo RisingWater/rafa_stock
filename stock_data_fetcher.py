@@ -255,7 +255,7 @@ class StockDataFetcher:
             logger.error(f"❌ 获取判断交易成功与否失败: {e}")
             return False
     
-    def get_all_stock_info(self, index = ['zz1000', 'hs300']):
+    def get_all_stock_info(self, index = ['zz1000', 'hs300', 'csi500']):
         db = StockDB()
 
         pd = db.get_stock_info()
