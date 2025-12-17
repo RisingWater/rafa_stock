@@ -1,7 +1,7 @@
 import os
 import asyncio
 import matplotlib
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from stock_data_fetcher import StockDataFetcher
