@@ -199,8 +199,8 @@ class StockPicker:
             increase = data_close - prev_close
             p_increase = p_close - prev_close
 
-            rate = increase / data_close
-            p_rate = p_increase / data_close
+            rate = increase / prev_close
+            p_rate = p_increase / prev_close
 
             if rate > 0.09:
                 #涨幅过大
@@ -317,7 +317,7 @@ class StockPicker:
                     "close": predict_data[0]['close'],
                     "high": predict_data[0]['high'],
                     "low": predict_data[0]['low'],
-                    "increase": increase
+                    "increase": increase * 100
                 })
             except Exception as e:
                 logger.error(f"预测股票数据失败: {stock_code}")
