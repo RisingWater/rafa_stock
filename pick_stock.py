@@ -214,7 +214,7 @@ class StockPicker:
         except Exception as e:
             return False
 
-    def pick_up_stock(self, console_print=False):
+    def pick_up_stock(self, console_print=False, pick_date = None):
         self.is_running = True
         self.interrupt_pick = False
 
@@ -225,7 +225,12 @@ class StockPicker:
         self.process_count = 0
         self.total_count = len(pd_data)
 
-        last_date, current_date, predict_date = self._get_trade_date()
+        if not pick_date:
+            last_date, current_date, predict_date = self._get_trade_date()
+        else:
+            predict_date = pick_date
+            current_date = self._tools.get_trading_day(predict_date, -1)
+            last_date = self._tools.get_trading_day(current_date, -2)
 
         try:
             self._fetcher.fetch_current_date(current_date)
@@ -336,18 +341,18 @@ class StockPicker:
         sorted_stocks = sorted(pick_up_stocks, key=lambda x: x['increase'], reverse=True)
 
         #筛选出increase大于0.02的股票
-        #filtered_stocks = [stock for stock in sorted_stocks if stock['increase'] > 0.02]
+        filtered_stocks = [stock for stock in sorted_stocks if stock['increase'] > 0.02]
 
         #处理数量：至少选3个，不够则取最大的3个
-        #if len(filtered_stocks) >= 5:
-        #    selected_stocks = filtered_stocks  # 筛选后足够，直接取筛选结果
-        #else:
+        if len(filtered_stocks) >= 5:
+            selected_stocks = filtered_stocks  # 筛选后足够，直接取筛选结果
+        else:
         # 筛选后不足3个，取排序后的前3个
-        #    selected_stocks = sorted_stocks[:5]
+            selected_stocks = sorted_stocks[:5]
 
         self.is_running = False
 
-        return sorted_stocks
+        return selected_stocks
 
 if __name__ == '__main__':
     logging.basicConfig(
