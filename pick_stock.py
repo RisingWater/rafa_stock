@@ -331,18 +331,18 @@ class StockPicker:
         sorted_stocks = sorted(pick_up_stocks, key=lambda x: x['increase'], reverse=True)
 
         #筛选出increase大于0.02的股票
-        filtered_stocks = [stock for stock in sorted_stocks if stock['increase'] > 0.02]
+        #filtered_stocks = [stock for stock in sorted_stocks if stock['increase'] > 0.02]
 
         #处理数量：至少选3个，不够则取最大的3个
-        if len(filtered_stocks) >= 5:
-            selected_stocks = filtered_stocks  # 筛选后足够，直接取筛选结果
-        else:
-            # 筛选后不足3个，取排序后的前3个
-            selected_stocks = sorted_stocks[:5]
+        #if len(filtered_stocks) >= 5:
+        #    selected_stocks = filtered_stocks  # 筛选后足够，直接取筛选结果
+        #else:
+        # 筛选后不足3个，取排序后的前3个
+        #    selected_stocks = sorted_stocks[:5]
 
         self.is_running = False
 
-        return selected_stocks
+        return sorted_stocks
 
 if __name__ == '__main__':
     logging.basicConfig(
