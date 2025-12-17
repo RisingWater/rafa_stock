@@ -203,9 +203,13 @@ class StockPicker:
             rate = increase / prev_close
             p_rate = p_increase / prev_close
 
-            if rate > 0.09:
+            if increase > 0.09:
                 #涨幅过大
                 return False
+
+            #if rate > 0.09:
+            #涨幅过大
+            #    return False
 
             if rate * p_rate > 0 :
                 if abs(rate - p_rate) < 0.01 :
@@ -354,7 +358,7 @@ class StockPicker:
         sorted_stocks = sorted(pick_up_stocks, key=lambda x: x['increase'], reverse=True)
 
         #筛选出increase大于0.02的股票
-        filtered_stocks = [stock for stock in sorted_stocks if stock['increase'] > 1]
+        filtered_stocks = [stock for stock in sorted_stocks if stock['increase'] > 0]
 
         #处理数量：至少选3个，不够则取最大的3个
         if len(filtered_stocks) >= 5:
