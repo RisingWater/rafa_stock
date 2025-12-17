@@ -255,7 +255,7 @@ class StockDataFetcher:
             logger.error(f"❌ 获取判断交易成功与否失败: {e}")
             return False
     
-    def get_all_stock_info(self):
+    def get_all_stock_info(self, index = ['zz1000', 'hs300']):
         db = StockDB()
 
         pd = db.get_stock_info()
@@ -274,6 +274,10 @@ class StockDataFetcher:
 
             if pd.empty:
                 logger.error("❌ 获取股票信息失败")
+
+        # 筛选stock_type在指定index列表中的数据
+        if not pd.empty and 'stock_type' in pd.columns:
+            pd = pd[pd['stock_type'].isin(index)]
         
         return pd
 
