@@ -203,21 +203,21 @@ class StockPicker:
             rate = increase / prev_close
             p_rate = p_increase / prev_close
 
-            if increase > 0.09:
+            #if increase > 0.09:
+            #    #涨幅过大
+            #    return False
+
+            if rate > 0.09:
                 #涨幅过大
                 return False
-
-            #if rate > 0.09:
-            #涨幅过大
-            #    return False
 
             if rate * p_rate > 0 :
                 if abs(rate - p_rate) < 0.01 :
                     return True
 
-            return False
+            return False, rate > 0
         except Exception as e:
-            return False
+            return False, False
 
     def pick_up_stock(self, console_print=False, pick_date = None):
         self.is_running = True
@@ -279,7 +279,8 @@ class StockPicker:
                     self._db.save_predict_daily_data(stock_code, last_date, tmp[0])
                     lastdate_p_data = self._db.get_predict_daily_data(stock_code, last_date)
 
-                if not self._is_right_predict(stock_code, lastdate_p_data, lastdate_data, last_date):
+                right, is_last_raise = self._is_right_predict(stock_code, lastdate_p_data, lastdate_data, last_date)
+                if not right:
                     continue
             except Exception as e:
                 logger.error(f"获取上一个交易日的股票数据失败: {stock_code} {e}")
@@ -313,7 +314,8 @@ class StockPicker:
                         self._db.save_predict_daily_data(stock_code, current_date, tmp[0])
                         curdate_p_data = self._db.get_predict_daily_data(stock_code, current_date)
 
-                if not self._is_right_predict(stock_code, curdate_p_data, current_data, current_date):
+                right, is_current_raise = self._is_right_predict(stock_code, curdate_p_data, current_data, current_date)
+                if not right:
                     continue
             except Exception as e:
                 logger.error(f"获取当前交易日的股票数据失败: {stock_code} {e}")
@@ -325,6 +327,10 @@ class StockPicker:
             else:
                 logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 3/4")
             
+            # 判断当前交易日与上一交易日趋势否一致
+            if is_current_raise != is_last_raise:
+                continue
+
             #预测下一个交易日数据，并存储
             try:
                 if not pick_date:
