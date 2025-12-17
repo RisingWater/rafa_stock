@@ -235,7 +235,7 @@ class StockPicker:
         else:
             predict_date = pick_date
             current_date = self._tools.get_trading_day(predict_date, -1)
-            last_date = self._tools.get_trading_day(current_date, -2)
+            last_date = self._tools.get_trading_day(predict_date, -2)
 
         #计算好交易日
         logger.info(f"上个交易日{last_date}")
