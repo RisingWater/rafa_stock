@@ -199,14 +199,15 @@ class StockPicker:
             increase = data_close - prev_close
             p_increase = p_close - prev_close
 
-            rate = abs(increase - p_increase) / abs(data_close)
+            rate = increase / data_close
+            p_rate = p_increase / data_close
 
             if rate > 0.09:
                 #涨幅过大
                 return False
 
-            if increase * p_increase > 0 :
-                if rate < 0.01 :
+            if rate * p_rate > 0 :
+                if abs(rate - p_rate) < 0.01 :
                     return True
 
             return False
