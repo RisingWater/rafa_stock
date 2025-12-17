@@ -354,7 +354,7 @@ class StockPicker:
         sorted_stocks = sorted(pick_up_stocks, key=lambda x: x['increase'], reverse=True)
 
         #筛选出increase大于0.02的股票
-        filtered_stocks = [stock for stock in sorted_stocks if stock['increase'] > 0.02]
+        filtered_stocks = [stock for stock in sorted_stocks if stock['increase'] > 1]
 
         #处理数量：至少选3个，不够则取最大的3个
         if len(filtered_stocks) >= 5:
