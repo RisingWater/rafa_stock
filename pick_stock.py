@@ -1,4 +1,5 @@
 import pandas as pd
+from fastapi import Request
 from stock_data_fetcher import StockDataFetcher
 from stock_db import StockDB
 from stock_tools import StockTools
