@@ -289,16 +289,25 @@ class StockPicker:
             
             #获取当前交易日的股票数据与预测数据
             try:
-                current_data = self._db.get_realtime_daily_data(stock_code, current_date)
-                if current_data.empty:
-                    continue
+                if not pick_date:
+                    current_data = self._db.get_realtime_daily_data(stock_code, current_date)
+                    if current_data.empty:
+                        continue
 
-                curdate_p_data = self._db.get_predict_daily_data(stock_code, current_date)
-                if curdate_p_data.empty:
-                    logger.info(f"当前交易日预测数据不存在，重新预测: {stock_code} {current_date}")
-                    tmp = self._predict_stock(stock_code, current_date)
-                    self._db.save_predict_daily_data(stock_code, current_date, tmp[0])
                     curdate_p_data = self._db.get_predict_daily_data(stock_code, current_date)
+                    if curdate_p_data.empty:
+                        logger.info(f"当前交易日预测数据不存在，重新预测: {stock_code} {current_date}")
+                        tmp = self._predict_stock(stock_code, current_date)
+                        self._db.save_predict_daily_data(stock_code, current_date, tmp[0])
+                        curdate_p_data = self._db.get_predict_daily_data(stock_code, current_date)
+                else:
+                    current_data = self._fetcher.get_daily_kline(stock_code, current_date, current_date)
+                    curdate_p_data = self._db.get_predict_daily_data(stock_code, current_date)
+                    if curdate_p_data.empty:
+                        logger.info(f"当前交易日预测数据不存在，重新预测: {stock_code} {current_date}")
+                        tmp = self._predict_stock(stock_code, current_date)
+                        self._db.save_predict_daily_data(stock_code, current_date, tmp[0])
+                        curdate_p_data = self._db.get_predict_daily_data(stock_code, current_date)
 
                 if not self._is_right_predict(stock_code, curdate_p_data, current_data, current_date):
                     continue
@@ -314,7 +323,11 @@ class StockPicker:
             
             #预测下一个交易日数据，并存储
             try:
-                predict_data = self._predict_stock(stock_code, current_date, current_data)
+                if not pick_date:
+                    predict_data = self._predict_stock(stock_code, current_date, current_data)
+                else:
+                    predict_data = self._predict_stock(stock_code, predict_date)
+
                 increase = (predict_data[0]['close'] - current_data['close'].iloc[0]) / current_data['close'].iloc[0]
 
                 pick_up_stocks.append({

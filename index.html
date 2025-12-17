@@ -121,6 +121,76 @@
             max-height: 500px;
         }
         
+        /* 日期选择区域 */
+        .date-selector {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin: 15px 0;
+            border: 1px solid #e9ecef;
+        }
+        
+        .date-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .date-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .date-option label {
+            font-size: 0.9rem;
+            color: #333;
+            cursor: pointer;
+        }
+        
+        .date-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .date-input-group.hidden {
+            display: none;
+        }
+        
+        .date-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background-color: white;
+        }
+        
+        .date-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
+        }
+        
+        .today-btn {
+            padding: 8px 12px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .today-btn:active {
+            background-color: #5a6268;
+            transform: scale(0.95);
+        }
+        
         /* 控制按钮区域 */
         .control-buttons {
             display: flex;
@@ -404,6 +474,21 @@
                 <span class="status-badge" id="pick-badge">--</span>
             </div>
             <div class="collapse-content" id="pick-card-content">
+                <!-- 日期选择区域 -->
+                <div class="date-selector">
+                    <div class="date-option">
+                        <input type="checkbox" id="use-specified-date">
+                        <label for="use-specified-date">历史回测</label>
+                    </div>
+                    <div class="date-input-group hidden" id="date-input-group">
+                        <input type="date" class="date-input" id="specified-date">
+                        <button type="button" class="today-btn" onclick="setToday()">今天</button>
+                    </div>
+                    <div class="date-hint" style="font-size: 0.8rem; color: #666; margin-top: 8px;">
+                        不指定日期时，将预测下一个交易日
+                    </div>
+                </div>
+                
                 <div class="progress-container">
                     <div class="progress-label">
                         <span>处理进度</span>
@@ -547,6 +632,22 @@
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 设置默认日期为今天
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            document.getElementById('specified-date').value = todayStr;
+            document.getElementById('specified-date').max = todayStr;
+            
+            // 监听日期复选框变化
+            document.getElementById('use-specified-date').addEventListener('change', function() {
+                const dateInputGroup = document.getElementById('date-input-group');
+                if (this.checked) {
+                    dateInputGroup.classList.remove('hidden');
+                } else {
+                    dateInputGroup.classList.add('hidden');
+                }
+            });
+            
             // 初始获取数据
             fetchAllData();
             
@@ -559,6 +660,13 @@
             // 设置下拉刷新
             setupPullToRefresh();
         });
+
+        // 设置今天日期
+        function setToday() {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            document.getElementById('specified-date').value = todayStr;
+        }
 
         // 设置自动刷新
         function setupAutoRefresh() {
@@ -905,11 +1013,27 @@
         // 启动预测任务
         async function startPickTask() {
             try {
+                const useSpecifiedDate = document.getElementById('use-specified-date').checked;
+                let postDataObj = {};
+                
+                // 如果勾选了指定日期，添加日期参数
+                if (useSpecifiedDate) {
+                    const specifiedDate = document.getElementById('specified-date').value;
+                    if (!specifiedDate) {
+                        showToast('请选择预测日期', 'error');
+                        return;
+                    }
+                    postDataObj.date = specifiedDate;
+                }
+                
                 showToast('正在启动预测任务...', 'info');
-                const result = await postData('/start_pick');
+                const result = await postData('/start_pick', postDataObj);
                 
                 if (result.success) {
-                    showToast('预测任务已启动', 'success');
+                    const message = useSpecifiedDate 
+                        ? `预测任务已启动（预测日期：${postDataObj.date}）`
+                        : '预测任务已启动';
+                    showToast(message, 'success');
                     // 稍等后刷新数据
                     setTimeout(fetchAllData, 1000);
                 } else {

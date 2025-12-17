@@ -140,8 +140,8 @@ async def stop_prepare():
     }
 
 @app.post("/start_pick")
-async def start_pick():
-    """异步启动pick任务"""
+async def start_pick(request: Request):
+    """异步启动pick任务，支持日期参数"""
     global is_pick_task_running, select_stocks, pick_task_future
     
     # 检查是否已经在运行
@@ -155,6 +155,13 @@ async def start_pick():
             }
         )
     
+    # 获取请求体中的参数
+    try:
+        body = await request.json()
+        pick_date = body.get("date")  # 可选参数
+    except json.JSONDecodeError:
+        pick_date = None
+    
     # 标记为运行中
     is_pick_task_running = True
     
@@ -164,7 +171,11 @@ async def start_pick():
         try:
             # 如果picker.pick_up_stock()是同步方法，使用线程池执行
             loop = asyncio.get_event_loop()
-            stocks = await loop.run_in_executor(executor, picker.pick_up_stock)
+            # 传递pick_date参数给pick_up_stock方法
+            stocks = await loop.run_in_executor(
+                executor, 
+                lambda: picker.pick_up_stock(pick_date=pick_date)
+            )
             select_stocks = stocks if stocks else []
             return True
         except Exception as e:
@@ -177,11 +188,18 @@ async def start_pick():
     # 启动异步任务（不等待）
     pick_task_future = asyncio.create_task(run_pick())
     
+    # 构建返回消息
+    if pick_date:
+        message = f"选股任务已启动（预测日期：{pick_date}）"
+    else:
+        message = "选股任务已启动（使用最新数据）"
+    
     return {
-        "message": "选股任务已启动",
+        "message": message,
         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "success": True,
-        "is_running": True
+        "is_running": True,
+        "pick_date": pick_date
     }
 
 @app.post("/stop_pick")
