@@ -217,7 +217,7 @@ class StockAKShare:
     def get_today_data_realtime(self, date):
         stock_data = ak.stock_zh_a_spot()
         if not stock_data.empty:
-            required_columns = ['代码', '名称', '最新价', '今开', '最高', '最低', '成交量', '名称']
+            required_columns = ['代码', '名称', '最新价', '今开', '最高', '最低', '成交量', '名称', '成交额']
             stock_data = stock_data[required_columns]
             # 重命名列名为英文
             stock_data = stock_data.rename(columns={
@@ -228,6 +228,7 @@ class StockAKShare:
                 '最高': 'high',
                 '最低': 'low',
                 '成交量': 'volume',
+                '成交量': 'amount',
                 '名称': 'stock_name'
             })
 
