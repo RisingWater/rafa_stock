@@ -227,15 +227,14 @@ class StockPicker:
 
         if not pick_date:
             last_date, current_date, predict_date = self._get_trade_date()
+            try:
+                self._fetcher.fetch_current_date(current_date)
+            except Exception as e:
+                logger.error(f"获取当前日期股票数据失败: {e}")
         else:
             predict_date = pick_date
             current_date = self._tools.get_trading_day(predict_date, -1)
             last_date = self._tools.get_trading_day(current_date, -2)
-
-        try:
-            self._fetcher.fetch_current_date(current_date)
-        except Exception as e:
-            logger.error(f"获取当前日期股票数据失败: {e}")
 
         #计算好交易日
         logger.info(f"上个交易日{last_date}")
