@@ -213,7 +213,7 @@ class StockPicker:
 
             if rate * p_rate > 0 :
                 if abs(rate - p_rate) < 0.01 :
-                    return True
+                    return True, rate > 0
 
             return False, rate > 0
         except Exception as e:
