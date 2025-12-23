@@ -214,9 +214,9 @@ class StockPicker:
                 #涨幅过大
                 return False
 
-            if rate * p_rate > 0 :
+            if rate * p_rate * rate_today > 0 :
                 if abs(rate - p_rate) < 0.01 :
-                    return True, (rate > 0 and rate_today > 0)
+                    return True, rate > 0
 
             return False, rate > 0
         except Exception as e:
