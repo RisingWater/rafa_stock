@@ -196,12 +196,15 @@ class StockPicker:
             prev_close = prev_data['close'].iloc[0]
             p_close = p_data['close'].iloc[0]
             data_close = data['close'].iloc[0]
+            data_open = data['open'].iloc[0]
 
             increase = data_close - prev_close
             p_increase = p_close - prev_close
 
             rate = increase / prev_close
             p_rate = p_increase / prev_close
+
+            rate_today = (data_close - data_open) / data_open
 
             #if increase > 0.09:
             #    #涨幅过大
@@ -211,7 +214,7 @@ class StockPicker:
                 #涨幅过大
                 return False
 
-            if rate * p_rate > 0 :
+            if rate * p_rate * rate_today > 0 :
                 if abs(rate - p_rate) < 0.01 :
                     return True, rate > 0
 
