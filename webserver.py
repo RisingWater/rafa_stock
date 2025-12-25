@@ -261,6 +261,7 @@ async def predict_endpoint(request: PredictRequest):
     """预测接口"""
     try:
         tools = StockTools()
+        fetcher = StockDataFetcher()
         now = datetime.now()
         if tools.is_trading_day(now):
             #如果当前是交易日
