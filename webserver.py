@@ -265,7 +265,7 @@ async def predict_endpoint(request: PredictRequest):
         now = datetime.now()
         if tools.is_trading_day(now):
             #如果当前是交易日
-            if now.hour <= 18:
+            if now.hour <= 17:
                 #收盘前，都是获取上一个交易日的k线数据
                 end_date = tools.get_trading_day(now, -1)
             else:
