@@ -259,18 +259,29 @@ setup_environment()
 async def predict_endpoint(request: PredictRequest):
     """预测接口"""
     try:
-        end_date = datetime.strptime(request.predict_date, "%Y-%m-%d")
-        
-        if request.predict_type == 'daily':
-            end_date = end_date + timedelta(days=-1)
-            start_date = end_date - timedelta(days=365)
-            pd_data = fetcher.get_daily_kline(request.stock_code, start_date=start_date.strftime("%Y-%m-%d"), end_date=end_date.strftime("%Y-%m-%d"))
-            if request.predict_len > 7:
-                return {"message": "Invalid predict_len"}
-            predict_len = request.predict_len
+        tools = StockTools()
+        now = datetime.now()
+        if tools.is_trading_day(now):
+            #如果当前是交易日
+            if now.hour <= 18:
+                #收盘前，都是获取上一个交易日的k线数据
+                end_date = tools.get_trading_day(now, -1)
+            else:
+                #收盘后，就可以获取今天的k线数据
+                end_date = tools.get_trading_day(now, 0)
         else:
-            return {"message": "Invalid predict_type"}
+            # 如果当前不是交易日
+            # 获取到上一个交易日的股票k线数据
+            end_date = tools.get_trading_day(now, -1)
 
+        if request.predict_len > 7:
+            return {"message": "Invalid predict_len"}
+        
+        start_date = tools.get_trading_day(end_date, delta=-200)
+
+        pd_data = fetcher.get_daily_kline(request.stock_code, start_date, end_date)
+        predict_len = request.predict_len
+        
         # 检查是否获取到数据
         if pd_data is None or len(pd_data) == 0:
             return {"message": "No data available for prediction"}
