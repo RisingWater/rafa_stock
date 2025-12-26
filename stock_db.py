@@ -375,10 +375,10 @@ class StockDB:
             cursor.execute('''
                 INSERT OR REPLACE INTO realtime_daily_kline 
                 (stock_code, date, open, high, low, close, volume, amount)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (
                 stock_code, realtime_date,
-                realtime_data['open'], realtime_data['high'], realtime_data['low'], realtime_data['close'], realtime_data['volume'], realtime_data['amount']
+                realtime_data['open'], realtime_data['high'], realtime_data['low'], realtime_data['close'], realtime_data['volume']
             ))
 
             conn.commit()
