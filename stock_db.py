@@ -343,7 +343,7 @@ class StockDB:
                     row.get('stock_code'), date,
                     row.get('open'), row.get('high'), 
                     row.get('low'), row.get('close'), 
-                    row.get('volume'), row.get('amount')
+                    row.get('volume')
                 ))
             
             conn = sqlite3.connect(self.db_path)
@@ -353,7 +353,7 @@ class StockDB:
             cursor.execute('BEGIN TRANSACTION')
             cursor.executemany('''
                 INSERT OR REPLACE INTO realtime_daily_kline 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', data_tuples)
             
             conn.commit()
