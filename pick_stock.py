@@ -212,7 +212,7 @@ class StockPicker:
 
             if rate > 0.09:
                 #涨幅过大
-                return False
+                return False, False
 
             if rate * p_rate * rate_today > 0 :
                 if abs(rate - p_rate) < 0.01 :
