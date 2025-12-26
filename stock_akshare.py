@@ -228,7 +228,7 @@ class StockAKShare:
                 '最高': 'high',
                 '最低': 'low',
                 '成交量': 'volume',
-                '成交量': 'amount',
+                '成交额': 'amount',
                 '名称': 'stock_name'
             })
 
