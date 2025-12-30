@@ -401,7 +401,7 @@ class StockPicker:
                         "close": predict_data[0]['close'],
                         "high": predict_data[0]['high'],
                         "low": predict_data[0]['low'],
-                        "increase": increase * 100 / 3
+                        "increase": total_increase * 100 / 3
                     })
             except Exception as e:
                 logger.error(f"预测股票数据失败: {stock_code}")
