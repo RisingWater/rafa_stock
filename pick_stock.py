@@ -222,6 +222,39 @@ class StockPicker:
         except Exception as e:
             return False, False
 
+    def should_filter_stock(self, stock_code):
+        """
+        判断一个股票代码是否需要过滤（创业板/科创板）
+        
+        参数:
+            stock_code: 股票代码字符串
+        
+        返回:
+            bool: True表示需要过滤（是创业板或科创板），False表示不需要过滤
+        """
+        # 确保输入是字符串
+        if not isinstance(stock_code, str):
+            stock_code = str(stock_code)
+        
+        # 创业板以300开头
+        is_gem = stock_code.startswith('300')
+        
+        # 科创板以688、689开头
+        is_star = stock_code.startswith('688') or stock_code.startswith('689')
+        
+        # 如果需要排除北交所（83、87、43开头），可以添加：
+        # is_bse = stock_code.startswith('8') or stock_code.startswith('43')
+        
+        # 如果需要排除所有非主板（即只保留沪市600-605和深市000-003）：
+        # is_main_board = (stock_code.startswith('60') or 
+        #                  stock_code.startswith('000') or 
+        #                  stock_code.startswith('001') or 
+        #                  stock_code.startswith('002') or 
+        #                  stock_code.startswith('003'))
+        
+        # 返回判断结果：如果是创业板或科创板，则需要过滤
+        return is_gem or is_star
+
     def pick_up_stock(self, console_print=False, pick_date = None):
         self.is_running = True
         self.interrupt_pick = False
@@ -271,6 +304,9 @@ class StockPicker:
                 print(f"\r进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 1/4          ", end='', flush=True)
             else:
                 logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 1/4")
+
+            if self.should_filter_stock(stock_code):  # 过滤创业板和科创板
+                continue
 
             #获取上一个交易日的股票数据与预测数据
             try:
@@ -336,23 +372,37 @@ class StockPicker:
 
             #预测下一个交易日数据，并存储
             try:
-                if not pick_date:
-                    predict_data = self._predict_stock(stock_code, current_date, current_data)
-                else:
-                    predict_data = self._predict_stock(stock_code, predict_date)
+                total_increase = 0
+                force_pick = False
+                # 循环进行3次预测
+                for i in range(3):
+                    if not pick_date:
+                        predict_data = self._predict_stock(stock_code, current_date, current_data)
+                    else:
+                        predict_data = self._predict_stock(stock_code, predict_date)
 
-                increase = (predict_data[0]['close'] - current_data['close'].iloc[0]) / current_data['close'].iloc[0]
+                    # 计算涨幅
+                    increase = (predict_data[0]['close'] - current_data['close'].iloc[0]) / current_data['close'].iloc[0]
 
-                pick_up_stocks.append({
-                    "stock_code": stock_code,
-                    "stock_name": stock_name,
-                    "date": predict_date,
-                    "open": predict_data[0]['open'],
-                    "close": predict_data[0]['close'],
-                    "high": predict_data[0]['high'],
-                    "low": predict_data[0]['low'],
-                    "increase": increase * 100
-                })
+                    # 如果涨幅预测涨幅大于2%，则强制选择
+                    if increase > 0.02:
+                        force_pick = True
+
+                    # 计算累计涨幅
+                    total_increase += increase
+
+                # 平均涨幅大于1.5%，则选择，或者有一次涨幅超过2%，则选中
+                if total_increase > 0.045 or force_pick:
+                    pick_up_stocks.append({
+                        "stock_code": stock_code,
+                        "stock_name": stock_name,
+                        "date": predict_date,
+                        "open": predict_data[0]['open'],
+                        "close": predict_data[0]['close'],
+                        "high": predict_data[0]['high'],
+                        "low": predict_data[0]['low'],
+                        "increase": increase * 100 / 3
+                    })
             except Exception as e:
                 logger.error(f"预测股票数据失败: {stock_code}")
                 continue
