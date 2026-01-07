@@ -403,6 +403,17 @@ class StockPicker:
                         "low": predict_data[0]['low'],
                         "increase": total_increase * 100 / 3
                     })
+                else:
+                    pick_up_stocks.append({
+                        "stock_code": stock_code,
+                        "stock_name": stock_name,
+                        "date": predict_date,
+                        "open": predict_data[0]['open'],
+                        "close": predict_data[0]['close'],
+                        "high": predict_data[0]['high'],
+                        "low": predict_data[0]['low'],
+                        "increase": total_increase * 100 / 3
+                    })
             except Exception as e:
                 logger.error(f"预测股票数据失败: {stock_code}")
                 continue
