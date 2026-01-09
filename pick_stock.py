@@ -305,8 +305,8 @@ class StockPicker:
             else:
                 logger.info(f"进度: [{bar}] {percent:.1f}% {self.process_count}/{self.total_count} {stock_name}({stock_code}) 1/4")
 
-            if self.should_filter_stock(stock_code):  # 过滤创业板和科创板
-                continue
+            #if self.should_filter_stock(stock_code):  # 过滤创业板和科创板
+            #    continue
 
             #获取上一个交易日的股票数据与预测数据
             try:
